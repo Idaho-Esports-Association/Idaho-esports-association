@@ -13,6 +13,8 @@ import { Sponsors } from "./pages/Sponsors";
 import { Support } from "./pages/Support";
 import { Contact } from "./pages/Contact";
 import { Games } from "./pages/Games";
+import { Champions } from "./pages/Champions";
+
 
 function App() {
   return (
@@ -31,6 +33,8 @@ function App() {
             <Route path="/sponsors" element={<Sponsors />} />
             <Route path="/support" element={<Support />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/champions" element={<Champions />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
         <Footer />
