@@ -6,24 +6,9 @@ export default {
     {
       name: 'game',
       title: 'Game',
-      type: 'string',
+      type: 'reference',
+      to: [{ type: 'gameOffering' }],
       description: 'Which game these rules apply to (leave empty for general rules)',
-      options: {
-        list: [
-          { title: 'League of Legends', value: 'League of Legends' },
-          { title: 'Valorant', value: 'Valorant' },
-          { title: 'Rocket League', value: 'Rocket League' },
-          { title: 'Overwatch 2', value: 'Overwatch 2' },
-          { title: 'Super Smash Bros. Ultimate', value: 'Super Smash Bros. Ultimate' },
-          { title: 'Mario Kart 8', value: 'Mario Kart 8' },
-          { title: 'Splatoon 3', value: 'Splatoon 3' },
-          { title: 'Fortnite', value: 'Fortnite' },
-          { title: 'Minecraft', value: 'Minecraft' },
-          { title: 'Call of Duty', value: 'Call of Duty' },
-          { title: 'Counter-Strike 2', value: 'Counter-Strike 2' },
-          { title: 'Apex Legends', value: 'Apex Legends' },
-        ],
-      },
     },
     {
       name: 'category',
@@ -65,14 +50,14 @@ export default {
   ],
   preview: {
     select: {
-      title: 'category',
-      subtitle: 'game',
+      category: 'category',
+      gameName: 'game.name', // Pulls the name from the referenced gameOffering
       date: 'lastUpdated',
     },
-    prepare({ title, subtitle, date }) {
+    prepare({ category, gameName, date }) {
       return {
-        title,
-        subtitle: `${subtitle || 'General'} - Updated: ${new Date(date).toLocaleDateString()}`,
+        title: gameName || 'General Rules',
+        subtitle: `${category} - Updated: ${new Date(date).toLocaleDateString()}`,
       };
     },
   },

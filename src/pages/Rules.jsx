@@ -1,44 +1,64 @@
-import React, { useEffect, useState } from 'react';
-import { BookOpen, Clock, ChevronDown, ChevronUp, Search } from 'lucide-react';
-import { queries } from '../services/sanity';
+import React, { useEffect, useState } from "react";
+import { BookOpen, Clock, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { queries } from "../services/sanity";
 
-const slugify = (text) => text?.toString().toLowerCase()
-  .trim()
-  .replace(/\s+/g, '-')
-  .replace(/[^\w\-]+/g, '') // remove non-word chars
-  .replace(/\-\-+/g, '-');
-
+const slugify = (text) =>
+  text
+    ?.toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w\-]+/g, "") // remove non-word chars
+    .replace(/\-\-+/g, "-");
 
 // Simple Markdown renderer
 const MarkdownRenderer = ({ content }) => {
   const parseMarkdown = (text) => {
-    if (!text) return '';
-    
+    if (!text) return "";
+
     // Headers
-    text = text.replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold text-purple-300 mt-4 mb-2">$1</h3>');
-    text = text.replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold text-purple-200 mt-6 mb-3">$1</h2>');
-    text = text.replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold text-purple-100 mt-8 mb-4">$1</h1>');
-    
+    text = text.replace(
+      /^### (.*$)/gim,
+      '<h3 class="text-xl font-bold text-purple-300 mt-4 mb-2">$1</h3>'
+    );
+    text = text.replace(
+      /^## (.*$)/gim,
+      '<h2 class="text-2xl font-bold text-purple-200 mt-6 mb-3">$1</h2>'
+    );
+    text = text.replace(
+      /^# (.*$)/gim,
+      '<h1 class="text-3xl font-bold text-purple-100 mt-8 mb-4">$1</h1>'
+    );
+
     // Bold and italic
-    text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-    text = text.replace(/\*\*(.+?)\*\*/g, '<strong class="text-cyan-300">$1</strong>');
-    text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    
+    text = text.replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>");
+    text = text.replace(
+      /\*\*(.+?)\*\*\*/g,
+      '<strong class="text-cyan-300">$1</strong>'
+    );
+    text = text.replace(/\*(.+?)\*/g, "<em>$1</em>");
+
     // Links
-    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-purple-400 hover:text-purple-300 underline" target="_blank" rel="noopener noreferrer">$1</a>');
-    
+    text = text.replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" class="text-purple-400 hover:text-purple-300 underline" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+
     // Lists
     text = text.replace(/^\* (.+)$/gim, '<li class="ml-4 mb-1">$1</li>');
-    text = text.replace(/^\d+\. (.+)$/gim, '<li class="ml-4 mb-1 list-decimal">$1</li>');
-    
+    text = text.replace(
+      /^\d+\. (.+)$/gim,
+      '<li class="ml-4 mb-1 list-decimal">$1</li>'
+    );
+
     // Line breaks
     text = text.replace(/\n\n/g, '</p><p class="mb-3">');
-    
+
     return `<p class="mb-3">${text}</p>`;
   };
 
   return (
-    <div 
+    <div
       className="prose prose-invert max-w-none text-gray-300"
       dangerouslySetInnerHTML={{ __html: parseMarkdown(content) }}
     />
@@ -55,17 +75,18 @@ const RuleCard = ({ rule, isOpen, onToggle }) => {
       >
         <div className="flex-1">
           <h3 className="text-xl font-bold text-white mb-1">{rule.category}</h3>
-          {rule.game && (
-            <span className="text-sm text-purple-400">{rule.game}</span>
+          {rule.gameName && (
+            <span className="text-sm text-purple-400">{rule.gameName}</span>
           )}
         </div>
         <div className="flex items-center space-x-4">
           {rule.lastUpdated && (
             <span className="text-sm text-gray-500 hidden sm:block">
-              Updated {new Date(rule.lastUpdated).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric',
-                year: 'numeric'
+              Updated{" "}
+              {new Date(rule.lastUpdated).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
               })}
             </span>
           )}
@@ -76,7 +97,7 @@ const RuleCard = ({ rule, isOpen, onToggle }) => {
           )}
         </div>
       </button>
-      
+
       {isOpen && (
         <div className="px-6 py-6 border-t border-purple-500/30 bg-slate-900/30">
           <MarkdownRenderer content={rule.content} />
@@ -91,24 +112,26 @@ export const Rules = () => {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [openRules, setOpenRules] = useState(new Set());
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGame, setSelectedGame] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedGame, setSelectedGame] = useState("all");
 
   useEffect(() => {
     const loadRules = async () => {
       try {
         const data = await queries.getRules();
         setRules(data);
-        
+
         // Find most recent update
         if (data.length > 0) {
-          const dates = data.map(r => new Date(r.lastUpdated)).filter(d => !isNaN(d));
+          const dates = data
+            .map((r) => new Date(r.lastUpdated))
+            .filter((d) => !isNaN(d));
           if (dates.length > 0) {
             setLastUpdated(new Date(Math.max(...dates)));
           }
         }
       } catch (error) {
-        console.error('Failed to load rules:', error);
+        console.error("Failed to load rules:", error);
       } finally {
         setLoading(false);
       }
@@ -117,8 +140,23 @@ export const Rules = () => {
     loadRules();
   }, []);
 
+  useEffect(() => {
+    if (!loading && rules.length > 0 && window.location.hash) {
+      setTimeout(() => {
+        const hash = window.location.hash.slice(1);
+        const element = document.getElementById(hash);
+        if (element) {
+          element.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      }, 100);
+    }
+  }, [loading, rules]);
+
   const toggleRule = (ruleId) => {
-    setOpenRules(prev => {
+    setOpenRules((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(ruleId)) {
         newSet.delete(ruleId);
@@ -130,30 +168,35 @@ export const Rules = () => {
   };
 
   const expandAll = () => {
-    setOpenRules(new Set(filteredRules.map(r => r._id)));
+    setOpenRules(new Set(filteredRules.map((r) => r._id)));
   };
 
   const collapseAll = () => {
     setOpenRules(new Set());
   };
 
-  // Get unique games for filter
-  const games = ['all', ...new Set(rules.map(r => r.game).filter(Boolean))].sort();
+  // Get unique games for filter - now using gameName instead of game
+  const games = [
+    "all",
+    ...new Set(rules.map((r) => r.gameName).filter(Boolean)),
+  ].sort();
 
   // Filter rules by search and game
-  const filteredRules = rules.filter(rule => {
-    const matchesSearch = searchTerm === '' || 
+  const filteredRules = rules.filter((rule) => {
+    const matchesSearch =
+      searchTerm === "" ||
       rule.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rule.content.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesGame = selectedGame === 'all' || rule.game === selectedGame;
-    
+
+    const matchesGame =
+      selectedGame === "all" || rule.gameName === selectedGame;
+
     return matchesSearch && matchesGame;
   });
 
-  // Group rules by game
+  // Group rules by game - now using gameName
   const rulesByGame = filteredRules.reduce((acc, rule) => {
-    const game = rule.game || 'General Rules';
+    const game = rule.gameName || "General Rules";
     if (!acc[game]) acc[game] = [];
     acc[game].push(rule);
     return acc;
@@ -165,20 +208,25 @@ export const Rules = () => {
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center space-x-3">
           <BookOpen className="w-12 h-12 text-purple-400" />
-          <h1 className="text-4xl md:text-5xl font-bold text-white">Tournament Rules</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-white">
+            Tournament Rules
+          </h1>
         </div>
         <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-          Official rules and regulations for all Idaho Esports Association tournaments. 
-          Click any section to expand and view detailed rules.
+          Official rules and regulations for all Idaho Esports Association
+          tournaments. Click any section to expand and view detailed rules.
         </p>
         {lastUpdated && (
           <div className="flex items-center justify-center space-x-2 text-purple-400">
             <Clock className="w-4 h-4" />
-            <span className="text-sm">Last updated: {lastUpdated.toLocaleDateString('en-US', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}</span>
+            <span className="text-sm">
+              Last updated:{" "}
+              {lastUpdated.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </span>
           </div>
         )}
       </div>
@@ -190,7 +238,8 @@ export const Rules = () => {
       ) : rules.length === 0 ? (
         <div className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/30 rounded-xl p-12 text-center">
           <p className="text-gray-400">
-            Rules are currently being updated. Please check back soon or contact us for more information.
+            Rules are currently being updated. Please check back soon or contact
+            us for more information.
           </p>
         </div>
       ) : (
@@ -212,7 +261,10 @@ export const Rules = () => {
 
               {/* Game Filter */}
               <div className="flex items-center space-x-3">
-                <label htmlFor="game-filter" className="text-gray-300 font-semibold whitespace-nowrap">
+                <label
+                  htmlFor="game-filter"
+                  className="text-gray-300 font-semibold whitespace-nowrap"
+                >
                   Filter by Game:
                 </label>
                 <select
@@ -221,9 +273,9 @@ export const Rules = () => {
                   onChange={(e) => setSelectedGame(e.target.value)}
                   className="flex-1 px-4 py-3 bg-slate-900 border border-purple-500/30 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
                 >
-                  {games.map(game => (
+                  {games.map((game) => (
                     <option key={game} value={game}>
-                      {game === 'all' ? 'All Games' : game}
+                      {game === "all" ? "All Games" : game}
                     </option>
                   ))}
                 </select>
@@ -233,7 +285,8 @@ export const Rules = () => {
             {/* Expand/Collapse All */}
             <div className="mt-4 flex items-center justify-between">
               <p className="text-gray-400 text-sm">
-                {filteredRules.length} {filteredRules.length === 1 ? 'rule' : 'rules'} found
+                {filteredRules.length}{" "}
+                {filteredRules.length === 1 ? "rule" : "rules"} found
               </p>
               <div className="flex gap-2">
                 <button
@@ -255,32 +308,41 @@ export const Rules = () => {
           {/* Rules Organized by Game */}
           {filteredRules.length === 0 ? (
             <div className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/30 rounded-xl p-12 text-center">
-              <p className="text-gray-400">No rules match your search criteria.</p>
+              <p className="text-gray-400">
+                No rules match your search criteria.
+              </p>
             </div>
           ) : (
             <div className="space-y-8">
-              {Object.entries(rulesByGame).sort().map(([game, gameRules]) => (
-                <div key={game} className="space-y-4">
-                  {/* Game Header */}
-                  <div className="flex items-center space-x-3">
-                    <div className="h-1 flex-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
-                    <h2 id={slugify(game)} className="text-2xl font-bold text-cyan-400 whitespace-nowrap px-4">{game}</h2>
-                    <div className="h-1 flex-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
-                  </div>
+              {Object.entries(rulesByGame)
+                .sort()
+                .map(([game, gameRules]) => (
+                  <div key={game} className="space-y-4">
+                    {/* Game Header */}
+                    <div className="flex items-center space-x-3">
+                      <div className="h-1 flex-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
+                      <h2
+                        id={slugify(game)}
+                        className="text-2xl font-bold text-cyan-400 whitespace-nowrap px-4"
+                      >
+                        {game}
+                      </h2>
+                      <div className="h-1 flex-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
+                    </div>
 
-                  {/* Rule Cards for this Game */}
-                  <div className="space-y-3">
-                    {gameRules.map(rule => (
-                      <RuleCard
-                        key={rule._id}
-                        rule={rule}
-                        isOpen={openRules.has(rule._id)}
-                        onToggle={() => toggleRule(rule._id)}
-                      />
-                    ))}
+                    {/* Rule Cards for this Game */}
+                    <div className="space-y-3">
+                      {gameRules.map((rule) => (
+                        <RuleCard
+                          key={rule._id}
+                          rule={rule}
+                          isOpen={openRules.has(rule._id)}
+                          onToggle={() => toggleRule(rule._id)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           )}
         </>
@@ -288,23 +350,28 @@ export const Rules = () => {
 
       {/* Important Notice */}
       <div className="bg-purple-900/30 border-l-4 border-purple-500 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-purple-300 mb-2">Important Notice</h3>
+        <h3 className="text-lg font-bold text-purple-300 mb-2">
+          Important Notice
+        </h3>
         <p className="text-gray-300 mb-2">
-          All participants are required to read and understand these rules before competing. 
-          Failure to comply with tournament rules may result in penalties or disqualification.
+          All participants are required to read and understand these rules
+          before competing. Failure to comply with tournament rules may result
+          in penalties or disqualification.
         </p>
         <p className="text-gray-400 text-sm">
-          Rules are subject to change. We will notify all registered participants of any rule updates 
-          via email and our Discord server.
+          Rules are subject to change. We will notify all registered
+          participants of any rule updates via email and our Discord server.
         </p>
       </div>
 
       {/* Questions CTA */}
       <div className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/30 rounded-xl p-8 text-center">
-        <h3 className="text-2xl font-bold text-white mb-4">Have Questions About the Rules?</h3>
+        <h3 className="text-2xl font-bold text-white mb-4">
+          Have Questions About the Rules?
+        </h3>
         <p className="text-gray-300 mb-6">
-          If you need clarification on any rule or have suggestions for improvements, 
-          we'd love to hear from you.
+          If you need clarification on any rule or have suggestions for
+          improvements, we'd love to hear from you.
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
           <a

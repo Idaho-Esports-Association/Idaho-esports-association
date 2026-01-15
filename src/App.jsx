@@ -13,6 +13,9 @@ import { Sponsors } from "./pages/Sponsors";
 import { Support } from "./pages/Support";
 import { Contact } from "./pages/Contact";
 import { Games } from "./pages/Games";
+import { AnnouncementBanner } from "./components/common/AnnouncementBanner";
+import { Schedule } from "./pages/Schedule";
+import { Transparency } from "./pages/Transparency";
 import { Champions } from "./pages/Champions";
 
 
@@ -21,6 +24,7 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-slate-900 text-white flex flex-col">
         <Header />
+        <AnnouncementBanner />
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
@@ -30,8 +34,10 @@ function App() {
             <Route path="/games" element={<Games />} />
             <Route path="/schools" element={<Schools />} />
             <Route path="/rules" element={<Rules />} />
+            <Route path="/transparency" element={<Transparency />} />
             <Route path="/sponsors" element={<Sponsors />} />
             <Route path="/support" element={<Support />} />
+            <Route path="/schedule" element={<Schedule />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/champions" element={<Champions />} />
             <Route path="*" element={<Navigate to="/" replace />} />

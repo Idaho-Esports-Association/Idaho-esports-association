@@ -149,12 +149,148 @@ export default defineType({
       type: "array",
       of: [defineArrayMember({ type: "string" })],
     }),
+
+    // --- SCHEDULE CONFIGURATION ---
+    defineField({
+      name: "schedules",
+      title: "Game Schedules",
+      type: "array",
+      description: "Configure schedules for different divisions/leagues",
+      of: [
+        defineArrayMember({
+          type: "object",
+          name: "schedule",
+          title: "Schedule",
+          fields: [
+            defineField({
+              name: "division",
+              title: "Division/League",
+              type: "string",
+              description: "e.g., High School, Middle School, JV, Varsity",
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: "isActive",
+              title: "Schedule Active?",
+              type: "boolean",
+              description: "Toggle to show/hide this schedule on the schedule page",
+              initialValue: true,
+            }),
+            defineField({
+              name: "timingMode",
+              title: "Timing Mode",
+              type: "string",
+              description: "How time zones are handled",
+              options: {
+                list: [
+                  { 
+                    title: "Separate Times (Each timezone at their own local time)", 
+                    value: "separate" 
+                  },
+                  { 
+                    title: "Unified Time (All timezones at same Mountain time)", 
+                    value: "unified" 
+                  },
+                ],
+                layout: "radio",
+              },
+              initialValue: "separate",
+            }),
+            defineField({
+              name: "mountainTime",
+              title: "Mountain Time",
+              type: "string",
+              description: "Time in Mountain timezone (e.g., '3:45 PM', '4:00 PM')",
+              validation: (Rule) => Rule.custom((value, context) => {
+                const isActive = context.parent?.isActive;
+                if (isActive && !value) {
+                  return 'Mountain time is required when schedule is active';
+                }
+                return true;
+              }),
+            }),
+            defineField({
+              name: "pacificTime",
+              title: "Pacific Time",
+              type: "string",
+              description: "Time in Pacific timezone (only used in 'Separate Times' mode)",
+              hidden: ({ parent }) => parent?.timingMode === "unified",
+            }),
+            defineField({
+              name: "daysOfWeek",
+              title: "Days of Week",
+              type: "array",
+              of: [defineArrayMember({ type: "string" })],
+              description: "Select all days this schedule runs",
+              options: {
+                list: [
+                  { title: "Monday", value: "monday" },
+                  { title: "Tuesday", value: "tuesday" },
+                  { title: "Wednesday", value: "wednesday" },
+                  { title: "Thursday", value: "thursday" },
+                  { title: "Friday", value: "friday" },
+                ],
+                layout: "grid",
+              },
+              validation: (Rule) => Rule.custom((value, context) => {
+                const isActive = context.parent?.isActive;
+                if (isActive && (!value || value.length === 0)) {
+                  return 'At least one day must be selected when schedule is active';
+                }
+                return true;
+              }),
+            }),
+            defineField({
+              name: "notes",
+              title: "Schedule Notes",
+              type: "text",
+              description: "Additional information about this schedule (optional)",
+              rows: 2,
+            }),
+          ],
+          preview: {
+            select: {
+              division: "division",
+              isActive: "isActive",
+              days: "daysOfWeek",
+              time: "mountainTime",
+            },
+            prepare({ division, isActive, days, time }) {
+              const dayCount = days?.length || 0;
+              const status = isActive ? "✓" : "✗";
+              return {
+                title: `${status} ${division}`,
+                subtitle: time ? `${time} - ${dayCount} day(s)` : "Not configured",
+              };
+            },
+          },
+        }),
+      ],
+    }),
   ],
 
   preview: {
     select: {
       title: "name",
       media: "logo",
+      schedules: "schedules",
+    },
+    prepare({ title, media, schedules }) {
+      const activeCount = schedules?.filter(s => s.isActive)?.length || 0;
+      const totalCount = schedules?.length || 0;
+      
+      let subtitle = "No schedules";
+      if (totalCount > 0) {
+        subtitle = activeCount > 0 
+          ? `📅 ${activeCount} active schedule(s)`
+          : `${totalCount} inactive schedule(s)`;
+      }
+      
+      return {
+        title: title,
+        subtitle: subtitle,
+        media: media,
+      };
     },
   },
 });
