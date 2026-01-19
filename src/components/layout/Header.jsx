@@ -1,23 +1,24 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Trophy } from 'lucide-react';
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Menu, X, Trophy } from "lucide-react";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
   const navigation = [
-    { name: 'Home', path: '/' },
-    { name: 'About', path: '/about' },
-    { name: 'Games', path: '/games' },
-    { name: 'Schools', path: '/schools' },
-    { name: 'Rules', path: '/rules' },
+    { name: "Home", path: "/" },
+    { name: "About", path: "/about" },
+    { name: "Games", path: "/games" },
+    { name: "Schools", path: "/schools" },
+    { name: "Champions", path: "/champions" }, 
+    { name: "Rules", path: "/rules" },
     { name: 'Schedule', path: '/schedule' },
-    { name: 'Getting Started', path: '/expecting' },
-    { name: 'Sponsors', path: '/sponsors' },
+    { name: "Getting Started", path: "/expecting" },
+    { name: "Sponsors", path: "/sponsors" },
     { name: 'Transparency', path: '/transparency' },
-    { name: 'Support Us', path: '/support' },
-    { name: 'Contact', path: '/contact' },
+    { name: "Support Us", path: "/support" },
+    { name: "Contact", path: "/contact" },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -41,8 +42,8 @@ export const Header = () => {
                 to={item.path}
                 className={`px-3 py-2 rounded-lg transition-all text-sm ${
                   isActive(item.path)
-                    ? 'bg-purple-600 text-white'
-                    : 'text-gray-300 hover:bg-slate-800 hover:text-white'
+                    ? "bg-purple-600 text-white"
+                    : "text-gray-300 hover:bg-slate-800 hover:text-white"
                 }`}
               >
                 {item.name}
@@ -55,7 +56,11 @@ export const Header = () => {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="lg:hidden text-white p-2"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
       </div>
@@ -71,8 +76,8 @@ export const Header = () => {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`block px-3 py-2 rounded-lg transition-all ${
                   isActive(item.path)
-                    ? 'bg-purple-600 text-white'
-                    : 'text-gray-300 hover:bg-slate-700'
+                    ? "bg-purple-600 text-white"
+                    : "text-gray-300 hover:bg-slate-700"
                 }`}
               >
                 {item.name}

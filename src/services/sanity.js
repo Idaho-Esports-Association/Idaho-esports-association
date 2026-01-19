@@ -59,10 +59,20 @@ export const queries = {
   // Get site settings
   getSiteSettings: () =>
     sanityClient.fetch(`*[_type == "siteSettings"][0] {
-      tournamentPlatformUrl, merchStoreUrl, discordInvite, donationUrl, mailingListDescription
-    }`),
+    tournamentPlatformUrl, 
+    merchStoreUrl, 
+    discordInvite, 
+    donationUrl, 
+    mailingListDescription,
+    announcementBanner {
+      enabled,
+      message,
+      link,
+      variant
+    }
+  }`),
   getGames: () =>
-    sanityClient.fetch(`*[_type == "gameOffering"] | order(name asc){
+      sanityClient.fetch(`*[_type == "gameOffering"] | order(name asc){
     _id,
     name,
     "slug": slug.current,
@@ -229,5 +239,43 @@ export const queries = {
       "conflictOfInterestPolicy": conflictOfInterestPolicy.asset->url,
       annualReportURL, guidestarURL
     }`),
+
+  getChampionshipResults: () =>
+    sanityClient.fetch(`*[_type == "championshipResult"] | order(year desc, eventDate desc) {
+    _id,
+    tournamentName,
+    game,
+    gameLogo,
+    championshipLevel,
+    season,
+    year,
+    eventDate,
+    division,
+    totalParticipants,
+    highlights,
+    bracketImage,
+    videoHighlight,
+    firstPlace {
+      teamName,
+      schoolName,
+      schoolLogo,
+      roster,
+      coachName
+    },
+    secondPlace {
+      teamName,
+      schoolName,
+      schoolLogo,
+      roster,
+      coachName
+    },
+    thirdPlace {
+      teamName,
+      schoolName,
+      schoolLogo,
+      roster,
+      coachName
+    }
+  }`)
 
 };
