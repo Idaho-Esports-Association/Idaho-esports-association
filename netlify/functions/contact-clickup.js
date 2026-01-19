@@ -62,9 +62,10 @@ ${message}
     tags: tags,
     status: 'NEW', // Default status - you can customize this in ClickUp
     // Custom fields can be added here if configured in ClickUp
-    // custom_fields: [
-    //   { id: 'field_id', value: email }
-    // ]
+    custom_fields: [
+    { id: 'Contact Name', value: name },
+    { id: 'Contact Email', value: email },
+    ]
   };
 
   const response = await fetch(`${CLICKUP_API}/list/${process.env.CLICKUP_LIST_ID}/task`, {
