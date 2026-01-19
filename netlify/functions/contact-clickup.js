@@ -60,7 +60,7 @@ ${message}
     description: description,
     priority: priority,
     tags: tags,
-    status: 'to do', // Default status - you can customize this in ClickUp
+    status: 'NEW', // Default status - you can customize this in ClickUp
     // Custom fields can be added here if configured in ClickUp
     // custom_fields: [
     //   { id: 'field_id', value: email }
