@@ -65,7 +65,7 @@ ${message}
     custom_fields: [
     { id: '1ffb5764-51e2-44be-82ac-3c818b74c8e1', value: name },
     { id: 'db51b3fe-0d12-4a56-a756-55335e988678', value: email },
-    { id: '3a97db8f-b70c-4122-93e1-b0a7406b7898', value: new Date(Date.now() + 24*60*60*1000).toISOString() }, // 1 day from now
+    { id: '3a97db8f-b70c-4122-93e1-b0a7406b7898', value: Date.now() + 24*60*60*1000 }, // 1 day from now (Unix timestamp)
     { id: 'b3ff9132-a37e-4671-9a57-70611e2211f1', value: 'Website' },
     ]
   };
