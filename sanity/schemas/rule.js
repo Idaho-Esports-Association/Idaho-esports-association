@@ -8,7 +8,7 @@ export default {
       title: 'Game',
       type: 'reference',
       to: [{ type: 'gameOffering' }],
-      description: 'Which game these rules apply to (leave empty for general rules)',
+      description: 'Select a specific game, or leave empty for general rules that apply to all games',
     },
     {
       name: 'category',
@@ -30,12 +30,7 @@ export default {
       title: 'Display Order',
       type: 'number',
       description: 'Order in which rules appear within the game (lower numbers first)',
-    },
-    {
-      name: 'lastUpdated',
-      title: 'Last Updated',
-      type: 'datetime',
-      initialValue: () => new Date().toISOString(),
+      initialValue: 1,
     },
   ],
   orderings: [
@@ -51,12 +46,12 @@ export default {
   preview: {
     select: {
       category: 'category',
-      gameName: 'game.name', // Pulls the name from the referenced gameOffering
-      date: 'lastUpdated',
+      gameName: 'game.name',
+      date: '_updatedAt',
     },
     prepare({ category, gameName, date }) {
       return {
-        title: gameName || 'General Rules',
+        title: gameName || '🌐 General Rules',
         subtitle: `${category} - Updated: ${new Date(date).toLocaleDateString()}`,
       };
     },

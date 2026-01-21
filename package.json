@@ -21,8 +21,8 @@
     "git-filter-repo": "^0.0.30",
     "is-retry-allowed": "^3.0.0",
     "lucide-react": "^0.556.0",
-    "react": "^19.2.1",
-    "react-dom": "^19.2.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "react-router-dom": "^7.10.1",
     "through2": "^4.0.2",
     "tunnel-agent": "^0.6.0"

@@ -32,16 +32,20 @@ export const queries = {
   // Get all rules
   getRules: async () => {
     return sanityClient.fetch(`
-      *[_type == "rule"] | order(game->name asc, order asc) {
-        _id,
-        category,
-        content,
-        order,
-        lastUpdated,
-        "gameName": game->name,
-        "gameSlug": game->slug.current
-      }
-    `);
+    *[_type == "rule"] | order(game->name asc, order asc) {
+      _id,
+      category,
+      content,
+      order,
+      "lastUpdated": _updatedAt,
+      "gameName": select(
+        defined(game->name) => game->name,
+        "General Rules"
+      ),
+      "gameSlug": game->slug.current,
+      "hasGame": defined(game)
+    }
+  `);
   },
 
   // Get Expecting series articles
@@ -72,7 +76,7 @@ export const queries = {
     }
   }`),
   getGames: () =>
-      sanityClient.fetch(`*[_type == "gameOffering"] | order(name asc){
+    sanityClient.fetch(`*[_type == "gameOffering"] | order(name asc){
     _id,
     name,
     "slug": slug.current,
