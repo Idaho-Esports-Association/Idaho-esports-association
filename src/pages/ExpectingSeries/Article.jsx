@@ -27,7 +27,7 @@ const PortableTextRenderer = ({ content }) => {
 
         // Handle links
         const link = block.markDefs?.find((def) =>
-          child.marks?.includes(def._key)
+          child.marks?.includes(def._key),
         );
         if (link) {
           return (
@@ -237,13 +237,17 @@ export const ExpectingArticle = () => {
               {article.downloadableResources.map((resource, index) => (
                 <a
                   key={index}
-                  href={resource.asset.url}
+                  href={
+                    resource.assetUrl ||
+                    (resource.asset && resource.asset.url) ||
+                    "#"
+                  }
                   download
                   className="block px-4 py-3 bg-slate-900 border border-purple-500/30 rounded-lg hover:border-purple-500 transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-white font-semibold">
-                      {resource.title}
+                      {resource.title || "Download"}
                     </span>
                     <Download className="w-5 h-5 text-purple-400" />
                   </div>

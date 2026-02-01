@@ -57,7 +57,11 @@ export const queries = {
   // Get single article by slug
   getExpectingArticle: (slug) =>
     sanityClient.fetch(`*[_type == "expectingArticle" && slug.current == $slug][0] {
-      _id, title, category, content, author, publishedAt
+      _id, title, slug, category, excerpt, content, author, publishedAt,
+      "downloadableResources": downloadableResources[] {
+        title,
+        "assetUrl": asset->url
+      }
     }`, { slug }),
 
   // Get site settings
