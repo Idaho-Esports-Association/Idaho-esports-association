@@ -14,14 +14,15 @@ import { Support } from "./pages/Support";
 import { Contact } from "./pages/Contact";
 import { Games } from "./pages/Games";
 import { AnnouncementBanner } from "./components/common/AnnouncementBanner";
+import { ScrollToTop } from "./components/common/ScrollToTop";
 import { Schedule } from "./pages/Schedule";
 import { Transparency } from "./pages/Transparency";
 import { Champions } from "./pages/Champions";
 
-
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <div className="min-h-screen bg-slate-900 text-white flex flex-col">
         <Header />
         <AnnouncementBanner />
