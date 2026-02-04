@@ -70,7 +70,7 @@ export const Header = () => {
             {groups.map((group) => (
               <div
                 key={group.title}
-                className="relative"
+                className="relative group"
                 onMouseEnter={() => setOpenDropdown(group.title)}
                 onMouseLeave={() => setOpenDropdown(null)}
               >
@@ -92,7 +92,7 @@ export const Header = () => {
                 </button>
 
                 {openDropdown === group.title && (
-                  <div className="absolute left-0 mt-2 w-48 bg-slate-900 border border-purple-500/30 rounded-md shadow-lg z-50">
+                  <div className="absolute left-0 mt-0 w-48 bg-slate-900 border border-purple-500/30 rounded-md shadow-lg z-50 pt-2">
                     <div className="py-2">
                       {group.items.map((item) => (
                         <Link
