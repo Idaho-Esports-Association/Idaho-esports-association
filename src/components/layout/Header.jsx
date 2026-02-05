@@ -30,6 +30,7 @@ export const Header = () => {
         { name: "About", path: "/about" },
         { name: "Transparency", path: "/transparency" },
         { name: "Contact", path: "/contact" },
+        { name: "Coach Help", path: "/coach-help" },
       ],
     },
     {

@@ -12,6 +12,7 @@ import { Rules } from "./pages/Rules";
 import { Sponsors } from "./pages/Sponsors";
 import { Support } from "./pages/Support";
 import { Contact } from "./pages/Contact";
+import { CoachHelp } from "./pages/CoachHelp";
 import { Games } from "./pages/Games";
 import { AnnouncementBanner } from "./components/common/AnnouncementBanner";
 import { ScrollToTop } from "./components/common/ScrollToTop";
@@ -40,6 +41,7 @@ function App() {
             <Route path="/support" element={<Support />} />
             <Route path="/schedule" element={<Schedule />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/coach-help" element={<CoachHelp />} />
             <Route path="/champions" element={<Champions />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
