@@ -1,6 +1,6 @@
 exports.handler = async (event) => {
   console.log('LeagueOS schools function called');
-  
+
   // Only allow GET requests
   if (event.httpMethod !== 'GET') {
     return {
@@ -33,7 +33,7 @@ exports.handler = async (event) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('LeagueOS API error:', errorText);
-      
+
       if (response.status === 401 || response.status === 403) {
         return {
           statusCode: 500,
@@ -61,7 +61,12 @@ exports.handler = async (event) => {
 
     // Filter out type 5 teams and "Example" team
     const filteredTeams = data.data.results.filter(
-      team => team.type !== 5 && team.name !== "Example" && team.teamCount > 0 && team.name !== "Yellow Lemming"
+      team =>
+        team.type !== 5 &&
+        team.name !== "Example" &&
+        team.teamCount > 0 &&
+        team.name !== "Yellow Lemming" &&
+        team.leagueData?.["0t09cs7ryuio2onmqfb80wbq2"]?.state === 0
     );
 
     // Transform data for frontend
