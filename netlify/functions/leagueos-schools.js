@@ -66,7 +66,7 @@ exports.handler = async (event) => {
         team.name !== "Example" &&
         team.teamCount > 0 &&
         team.name !== "Yellow Lemming" &&
-        team.leagueData?.["0t09cs7ryuio2onmqfb80wbq2"]?.state === 0
+        team.leagueData?.["0t09cs7ryuio2onmqfb80wbq2"]?.state !== 0
     );
 
     // Transform data for frontend
