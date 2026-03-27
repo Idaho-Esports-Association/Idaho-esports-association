@@ -72,11 +72,11 @@ exports.handler = async (event) => {
     // Transform data for frontend
     const schools = filteredTeams.map(team => ({
       id: team.id,
-      name: team.name,
+      name: team.schoolData?.name || Object.values(team.eagueData || {})[0]?.name || team.name,
       city: team.city || null,
-      logo: `https://images.leagueos.gg/groups/${team.id}/${team.avatar}` || null,
+      logo: team.avatar ? `https://images.leagueos.gg/groups/${team.id}/${team.avatar}` : null,
       teamCount: team.teamCount || null,
-      leagueosUrl: `https://idahoesports.leagueos.gg/league/groups/${team.id}`,
+      leagueosUrl: `https://idahoesports.leagueos.gg/schools/${team.id}`,
       type: team.type,
     }));
 
