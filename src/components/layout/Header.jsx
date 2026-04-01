@@ -38,6 +38,7 @@ export const Header = () => {
       items: [
         { name: "Sponsors", path: "/sponsors" },
         { name: "Support Us", path: "/support" },
+        { name: 'Newsletter Archive', path: '/newsletter-archive' },
       ],
     },
   ];

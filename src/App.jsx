@@ -19,6 +19,7 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import { Schedule } from "./pages/Schedule";
 import { Transparency } from "./pages/Transparency";
 import { Champions } from "./pages/Champions";
+import { NewsletterArchive } from "./pages/NewsletterArchive";
 
 function App() {
   return (
@@ -43,6 +44,8 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/coach-help" element={<CoachHelp />} />
             <Route path="/champions" element={<Champions />} />
+            <Route path="/newsletter-archive" element={<NewsletterArchive />} />
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

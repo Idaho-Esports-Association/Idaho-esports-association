@@ -11,6 +11,7 @@ import meetingAgenda from './meetingAgenda';
 import financialReport from './financialReport';
 import nonprofitInfo from './nonprofitInfo';
 import championshipResult from './championshipResult'; 
+import newsletterEmail from './newsletterEmail';
 
 export const schemaTypes = [
   sponsor,
@@ -23,4 +24,5 @@ export const schemaTypes = [
   financialReport,
   nonprofitInfo,
   championshipResult, 
+  newsletterEmail,
 ];

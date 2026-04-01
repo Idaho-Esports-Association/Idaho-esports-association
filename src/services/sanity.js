@@ -284,6 +284,20 @@ export const queries = {
       roster,
       coachName
     }
-  }`)
+  }`),
+  getNewsletterEmails: () =>
+    sanityClient.fetch(`
+         *[_type == "newsletterEmail" && published == true] | order(sentAt desc) {
+           _id,
+           subject,
+           "slug": slug.current,
+           sentAt,
+           previewText,
+           mailerliteUrl,
+           audienceTags,
+           customTags,
+           highlightedLinks[] { label, url }
+         }
+       `),
 
 };
