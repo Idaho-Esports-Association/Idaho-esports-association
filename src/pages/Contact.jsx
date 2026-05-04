@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, MessageSquare, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, MessageSquare, Send, CheckCircle, AlertCircle, PhoneCall } from 'lucide-react';
 
 export const Contact = () => {
   const [formData, setFormData] = useState({
@@ -180,7 +180,7 @@ export const Contact = () => {
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-white mb-2">Join our Discord</h3>
                 <p className="text-gray-400 mb-4">
-                  The fastest way to get help and connect with the community.
+                  The fastest way to connect with the community.
                 </p>
                 <a
                   href="https://discord.gg/REySEYwFEr"
@@ -210,6 +210,26 @@ export const Contact = () => {
                   className="text-cyan-400 hover:text-cyan-300 transition-colors"
                 >
                   info@idahoesports.gg
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6">
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <PhoneCall className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-white mb-2">Call Us</h3>
+                <p className="text-gray-400 mb-2">
+                  Prefer calling?
+                </p>
+                <a
+                  href="tel:+12084647616"
+                  className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                >
+                  (208) 464-7616
                 </a>
               </div>
             </div>

@@ -385,6 +385,15 @@ export const CoachHelp = () => {
               support@idahoesports.gg
             </a>
           </div>
+          <div>
+            <span className="text-blue-300 font-semibold">Call:</span>{" "}
+            <a
+              href="tel:+12084647616"
+              className="text-cyan-400 hover:text-cyan-300"
+            >
+              (208) 464-7616
+            </a>
+          </div>
         </div>
       </div>
     </div>

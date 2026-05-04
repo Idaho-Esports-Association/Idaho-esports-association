@@ -125,6 +125,11 @@ export const Footer = () => {
                   Email Us
                 </a>
               </li>
+              <li>
+                <a href="tel:+12084647616" className="hover:text-purple-400">
+                  Call Us
+                </a>
+              </li>
             </ul>
           </div>
         </div>
