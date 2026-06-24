@@ -1,17 +1,13 @@
 export const subscribeToNewsletter = async (email, name) => {
   console.log('🔵 Starting newsletter subscription:', { email, name });
-  
+
   try {
     console.log('🔵 Calling function at:', '/.netlify/functions/mailerlite-subscribe');
-    
+
     const response = await fetch('/.netlify/functions/mailerlite-subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        email, 
-        name,
-        groups: ['general']
-      }),
+      body: JSON.stringify({ email, name, phone, smsOptIn, groups: ['general'] }),
     });
 
     console.log('🔵 Response status:', response.status);

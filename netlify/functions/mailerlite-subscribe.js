@@ -2,18 +2,18 @@ exports.handler = async (event) => {
   // Log for debugging
   console.log('MailerLite function called');
   console.log('Method:', event.httpMethod);
-  
+
   // Only allow POST
   if (event.httpMethod !== 'POST') {
-    return { 
-      statusCode: 405, 
+    return {
+      statusCode: 405,
       body: JSON.stringify({ error: 'Method Not Allowed' })
     };
   }
 
   try {
-    const { email, name, groups } = JSON.parse(event.body);
-    console.log('Received data:', { email, name, groups });
+    const { email, name, phone, smsOptIn, groups } = JSON.parse(event.body);
+    console.log('Received data:', { email, name, phone, smsOptIn, groups });
 
     // Validate email
     if (!email || !email.includes('@')) {
@@ -22,7 +22,11 @@ exports.handler = async (event) => {
         body: JSON.stringify({ error: 'Valid email is required' }),
       };
     }
-
+    if (phone) subscriberFields.phone = phone;
+    if (smsOptIn && phone) {
+      subscriberFields.sms_consent = 'yes';
+      subscriberFields.sms_consent_timestamp = new Date().toISOString();
+    }
     // Check if API key exists
     if (!process.env.MAILERLITE_API_KEY) {
       console.error('MAILERLITE_API_KEY not set in environment variables');
@@ -51,9 +55,9 @@ exports.handler = async (event) => {
     // Determine which API version to use based on API key format
     // New MailerLite tokens are longer (usually 64+ characters)
     const isNewMailerLite = process.env.MAILERLITE_API_KEY.length > 40;
-    
+
     let response;
-    
+
     if (isNewMailerLite) {
       // NEW MailerLite API (accounts created after March 22, 2022)
       console.log('Using NEW MailerLite API');
@@ -95,7 +99,7 @@ exports.handler = async (event) => {
 
     if (!response.ok) {
       console.error('MailerLite API error:', data);
-      
+
       // Handle specific error cases
       if (response.status === 401) {
         return {
@@ -103,13 +107,13 @@ exports.handler = async (event) => {
           body: JSON.stringify({ error: 'API authentication failed' }),
         };
       }
-      
+
       if (response.status === 422) {
         // Validation error - possibly already subscribed
         return {
           statusCode: 400,
-          body: JSON.stringify({ 
-            error: data.message || 'Email may already be subscribed' 
+          body: JSON.stringify({
+            error: data.message || 'Email may already be subscribed'
           }),
         };
       }
@@ -123,9 +127,9 @@ exports.handler = async (event) => {
     console.log('Successfully subscribed:', email);
     return {
       statusCode: 200,
-      body: JSON.stringify({ 
-        success: true, 
-        message: 'Successfully subscribed to newsletter' 
+      body: JSON.stringify({
+        success: true,
+        message: 'Successfully subscribed to newsletter'
       }),
     };
 
@@ -133,9 +137,9 @@ exports.handler = async (event) => {
     console.error('Newsletter signup error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         error: 'Internal server error',
-        details: error.message 
+        details: error.message
       }),
     };
   }
