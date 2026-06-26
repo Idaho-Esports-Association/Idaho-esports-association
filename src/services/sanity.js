@@ -285,6 +285,15 @@ export const queries = {
       coachName
     }
   }`),
+  getLegalDocument: (slug) =>
+    sanityClient.fetch(
+      `*[_type == "legalDocument" && slug.current == $slug][0] {
+        title, effectiveDate, lastUpdated, intro, contactEmail,
+        sections[] { heading, body }
+      }`,
+      { slug }
+    ),
+
   getNewsletterEmails: () =>
     sanityClient.fetch(`
          *[_type == "newsletterEmail" && published == true] | order(sentAt desc) {
