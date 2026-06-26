@@ -20,6 +20,8 @@ import { Schedule } from "./pages/Schedule";
 import { Transparency } from "./pages/Transparency";
 import { Champions } from "./pages/Champions";
 import { NewsletterArchive } from "./pages/NewsletterArchive";
+import { PrivacyPolicy } from "./pages/PrivacyPolicy";
+import { TermsOfService } from "./pages/TermsOfService";
 
 function App() {
   return (
@@ -45,6 +47,8 @@ function App() {
             <Route path="/coach-help" element={<CoachHelp />} />
             <Route path="/champions" element={<Champions />} />
             <Route path="/newsletter-archive" element={<NewsletterArchive />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

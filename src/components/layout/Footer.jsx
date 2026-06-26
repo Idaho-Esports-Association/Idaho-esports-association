@@ -169,6 +169,15 @@ export const Footer = () => {
           <p className="mt-2 text-sm">
             Committed to transparency and fair play in Idaho gaming.
           </p>
+          <div className="mt-3 flex justify-center gap-4 text-xs text-gray-500">
+            <a href="/privacy-policy" className="hover:text-purple-400 transition-colors">
+              Privacy Policy
+            </a>
+            <span>·</span>
+            <a href="/terms-of-service" className="hover:text-purple-400 transition-colors">
+              Terms of Service
+            </a>
+          </div>
         </div>
       </div>
     </footer>

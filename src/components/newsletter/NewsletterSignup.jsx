@@ -150,6 +150,15 @@ export const NewsletterSignup = ({ inline = false }) => {
                 <strong className="text-gray-400">STOP</strong> to cancel,{" "}
                 <strong className="text-gray-400">HELP</strong> for help.
                 Consent is not a condition of purchase or participation.
+                View our{" "}
+                <a href="/privacy-policy" className="underline hover:text-gray-300">
+                  Privacy Policy
+                </a>
+                {" "}and{" "}
+                <a href="/terms-of-service" className="underline hover:text-gray-300">
+                  Terms of Service
+                </a>
+                .
               </p>
             </div>
           )}
