@@ -161,8 +161,8 @@ export const NewsletterSignup = ({ inline = false }) => {
               <p className="text-xs text-gray-400 leading-relaxed">
                 By checking this box and providing your phone number, you
                 consent to receive recurring automated text messages from Idaho
-                Esports Association. Message frequency varies. Msg &amp; data
-                rates may apply. Reply{" "}
+                Esports Association. Message frequency: up to 4 msgs/month.
+                Msg &amp; data rates may apply. Reply{" "}
                 <strong className="text-gray-400">STOP</strong> to cancel,{" "}
                 <strong className="text-gray-400">HELP</strong> for help.
                 Consent is not a condition of purchase or participation.
