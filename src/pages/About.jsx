@@ -253,7 +253,7 @@ export const About = () => {
               href="https://app.candid.org/profile/15079270/idaho-esports-association-93-2128403/?pkId=dbdcfbf4-f040-410f-814a-f3ec72eaa509"
               target="_blank"
             >
-              <img src="https://widgets.guidestar.org/prod/v1/pdp/transparency-seal/15079270/svg" />{" "}
+              <img src="https://widgets.guidestar.org/prod/v1/pdp/transparency-seal/15079270/svg" alt="Candid (GuideStar) Transparency Seal" />{" "}
             </a>
             <p className="text-center text-sm text-gray-400 mt-3">
               Verified by

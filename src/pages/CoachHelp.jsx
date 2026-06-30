@@ -292,7 +292,7 @@ export const CoachHelp = () => {
             </button>
 
             {status === "success" && (
-              <div className="bg-green-900/30 border border-green-500/50 rounded-lg p-4 flex items-start space-x-3">
+              <div role="status" className="bg-green-900/30 border border-green-500/50 rounded-lg p-4 flex items-start space-x-3">
                 <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-green-300 font-semibold">
@@ -307,7 +307,7 @@ export const CoachHelp = () => {
             )}
 
             {status === "error" && (
-              <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 flex items-start space-x-3">
+              <div role="alert" className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 flex items-start space-x-3">
                 <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-red-300 font-semibold">

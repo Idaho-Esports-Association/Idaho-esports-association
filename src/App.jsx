@@ -28,9 +28,15 @@ function App() {
     <BrowserRouter>
       <ScrollToTop />
       <div className="min-h-screen bg-slate-900 text-white flex flex-col">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg"
+        >
+          Skip to main content
+        </a>
         <Header />
         <AnnouncementBanner />
-        <main className="flex-grow">
+        <main id="main-content" tabIndex={-1} className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/expecting" element={<ExpectingIndex />} />

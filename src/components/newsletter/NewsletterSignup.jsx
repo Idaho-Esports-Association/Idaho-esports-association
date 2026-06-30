@@ -64,9 +64,13 @@ export const NewsletterSignup = ({ inline = false }) => {
 
   if (inline) {
     return (
-      <div className="space-y-2">
+      <form onSubmit={handleSubmit} className="space-y-2">
         <div className="flex flex-col sm:flex-row gap-2">
+          <label htmlFor="newsletter-email-inline" className="sr-only">
+            Your email
+          </label>
           <input
+            id="newsletter-email-inline"
             type="email"
             placeholder="Your email"
             value={email}
@@ -75,7 +79,7 @@ export const NewsletterSignup = ({ inline = false }) => {
             required
           />
           <button
-            onClick={handleSubmit}
+            type="submit"
             disabled={status === "loading"}
             className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 whitespace-nowrap"
           >
@@ -83,12 +87,12 @@ export const NewsletterSignup = ({ inline = false }) => {
           </button>
         </div>
         {status === "success" && (
-          <p className="text-green-400 text-sm">✓ Successfully subscribed!</p>
+          <p role="status" className="text-green-400 text-sm">✓ Successfully subscribed!</p>
         )}
         {status === "error" && (
-          <p className="text-red-400 text-sm">✗ {errorMessage}</p>
+          <p role="alert" className="text-red-400 text-sm">✗ {errorMessage}</p>
         )}
-      </div>
+      </form>
     );
   }
 
@@ -103,15 +107,23 @@ export const NewsletterSignup = ({ inline = false }) => {
         updates.
       </p>
 
-      <div className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <label htmlFor="newsletter-name" className="sr-only">
+          Your name (optional)
+        </label>
         <input
+          id="newsletter-name"
           type="text"
           placeholder="Your name (optional)"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="w-full px-4 py-2 bg-slate-900 border border-purple-500/30 rounded-lg text-white focus:outline-none focus:border-purple-500"
         />
+        <label htmlFor="newsletter-email" className="sr-only">
+          Your email
+        </label>
         <input
+          id="newsletter-email"
           type="email"
           placeholder="Your email"
           value={email}
@@ -135,7 +147,11 @@ export const NewsletterSignup = ({ inline = false }) => {
 
           {smsOptIn && (
             <div className="space-y-2 pl-7">
+              <label htmlFor="newsletter-phone" className="sr-only">
+                Phone number
+              </label>
               <input
+                id="newsletter-phone"
                 type="tel"
                 placeholder="Phone number (e.g. 208-555-0100)"
                 value={phone}
@@ -164,7 +180,7 @@ export const NewsletterSignup = ({ inline = false }) => {
           )}
         </div>
         <button
-          onClick={handleSubmit}
+          type="submit"
           disabled={status === "loading"}
           className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50"
         >
@@ -172,16 +188,16 @@ export const NewsletterSignup = ({ inline = false }) => {
         </button>
 
         {status === "success" && (
-          <div className="bg-green-900/30 border border-green-500/50 rounded-lg p-3 text-green-300 text-sm">
+          <div role="status" className="bg-green-900/30 border border-green-500/50 rounded-lg p-3 text-green-300 text-sm">
             ✓ Successfully subscribed! Check your email to confirm.
           </div>
         )}
         {status === "error" && (
-          <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3 text-red-300 text-sm">
+          <div role="alert" className="bg-red-900/30 border border-red-500/50 rounded-lg p-3 text-red-300 text-sm">
             ✗ {errorMessage || "Something went wrong. Please try again."}
           </div>
         )}
-      </div>
+      </form>
     </div>
   );
 };

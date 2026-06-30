@@ -59,8 +59,8 @@ export const Contact = () => {
         {/* Contact Form */}
         <div className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/30 rounded-xl p-8">
           <h2 className="text-2xl font-bold text-white mb-6">Send us a Message</h2>
-          
-          <div className="space-y-4">
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
                 Name *
@@ -126,7 +126,7 @@ export const Contact = () => {
             </div>
 
             <button
-              onClick={handleSubmit}
+              type="submit"
               disabled={status === 'sending'}
               className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
@@ -144,7 +144,7 @@ export const Contact = () => {
             </button>
 
             {status === 'success' && (
-              <div className="bg-green-900/30 border border-green-500/50 rounded-lg p-4 flex items-start space-x-3">
+              <div role="status" className="bg-green-900/30 border border-green-500/50 rounded-lg p-4 flex items-start space-x-3">
                 <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-green-300 font-semibold">Message sent successfully!</p>
@@ -156,7 +156,7 @@ export const Contact = () => {
             )}
 
             {status === 'error' && (
-              <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 flex items-start space-x-3">
+              <div role="alert" className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 flex items-start space-x-3">
                 <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-red-300 font-semibold">Failed to send message</p>
@@ -166,7 +166,7 @@ export const Contact = () => {
                 </div>
               </div>
             )}
-          </div>
+          </form>
         </div>
 
         {/* Contact Info & Alternative Methods */}
