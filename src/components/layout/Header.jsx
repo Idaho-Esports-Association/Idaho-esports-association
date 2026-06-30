@@ -45,6 +45,21 @@ export const Header = () => {
 
   const isActive = (path) => location.pathname === path;
 
+  // Close the open dropdown when focus leaves the group entirely.
+  const handleGroupBlur = (e, title) => {
+    if (!e.currentTarget.contains(e.relatedTarget) && openDropdown === title) {
+      setOpenDropdown(null);
+    }
+  };
+
+  // Escape closes the dropdown and returns focus to its trigger button.
+  const handleGroupKeyDown = (e, title) => {
+    if (e.key === "Escape" && openDropdown === title) {
+      setOpenDropdown(null);
+      e.currentTarget.querySelector("button")?.focus();
+    }
+  };
+
   return (
     <nav className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-purple-500/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -75,6 +90,8 @@ export const Header = () => {
                 className="relative group"
                 onMouseEnter={() => setOpenDropdown(group.title)}
                 onMouseLeave={() => setOpenDropdown(null)}
+                onBlur={(e) => handleGroupBlur(e, group.title)}
+                onKeyDown={(e) => handleGroupKeyDown(e, group.title)}
               >
                 <button
                   onClick={() =>
@@ -89,17 +106,22 @@ export const Header = () => {
                   }`}
                   aria-haspopup="true"
                   aria-expanded={openDropdown === group.title}
+                  aria-controls={`dropdown-${group.title}`}
                 >
                   {group.title}
                 </button>
 
                 {openDropdown === group.title && (
-                  <div className="absolute left-0 mt-0 w-48 bg-slate-900 border border-purple-500/30 rounded-md shadow-lg z-50 pt-2">
+                  <div
+                    id={`dropdown-${group.title}`}
+                    className="absolute left-0 mt-0 w-48 bg-slate-900 border border-purple-500/30 rounded-md shadow-lg z-50 pt-2"
+                  >
                     <div className="py-2">
                       {group.items.map((item) => (
                         <Link
                           key={item.path}
                           to={item.path}
+                          onClick={() => setOpenDropdown(null)}
                           className={`block px-4 py-2 text-sm ${isActive(item.path) ? "bg-purple-600 text-white" : "text-gray-200 hover:bg-slate-800"}`}
                         >
                           {item.name}
@@ -117,6 +139,8 @@ export const Header = () => {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="lg:hidden text-white p-2"
             aria-label="Toggle menu"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-menu"
           >
             {mobileMenuOpen ? (
               <X className="w-6 h-6" />
@@ -129,7 +153,7 @@ export const Header = () => {
 
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-slate-800 border-t border-purple-500/30">
+        <div id="mobile-menu" className="lg:hidden bg-slate-800 border-t border-purple-500/30">
           <div className="px-4 py-4 space-y-4">
             <Link
               to="/"
