@@ -3,10 +3,61 @@ import React, { useEffect, useState } from 'react';
 import { Trophy, Medal, Award, Calendar, Users, ChevronDown, ChevronUp, Filter, Search } from 'lucide-react';
 import { queries, urlFor } from '../services/sanity';
 
+// Single placement (1st/2nd/3rd) within a championship card
+const PlacementCard = ({ placement, data, medalColor, isExpanded }) => {
+  if (!data || !data.schoolName) return null;
+
+  const schoolLogo = data.schoolLogo ? urlFor(data.schoolLogo).width(60).height(60).url() : null;
+
+  return (
+    <div className={`bg-slate-900/50 border-2 ${medalColor} rounded-xl p-4 hover:scale-102 transition-transform`}>
+      <div className="flex items-start gap-4">
+        {/* School Logo */}
+        {schoolLogo ? (
+          <div className="w-14 h-14 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0">
+            <img src={schoolLogo} alt={data.schoolName} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className={`w-14 h-14 rounded-lg bg-gradient-to-br ${medalColor.replace('border-', 'from-').replace('/50', '')} to-slate-700 flex items-center justify-center flex-shrink-0`}>
+            <span className="text-2xl font-bold text-white">{placement}</span>
+          </div>
+        )}
+
+        {/* Team Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-2xl">{placement === 1 ? '🥇' : placement === 2 ? '🥈' : '🥉'}</span>
+            <h4 className="font-bold text-white text-lg">{data.teamName || data.schoolName}</h4>
+          </div>
+          <p className="text-purple-400 font-semibold">{data.schoolName}</p>
+
+          {data.coachName && (
+            <p className="text-sm text-gray-400 mt-1">Coach: {data.coachName}</p>
+          )}
+
+          {/* Roster - Only show when expanded */}
+          {isExpanded && data.roster && data.roster.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-slate-700">
+              <p className="text-xs text-gray-400 mb-1">Roster:</p>
+              <div className="flex flex-wrap gap-1">
+                {data.roster.map((player, idx) => (
+                  <span key={idx} className="text-xs bg-slate-800 text-gray-300 px-2 py-1 rounded">
+                    {player}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Individual Championship Card Component
 const ChampionshipCard = ({ result, isExpanded, onToggle }) => {
   const gameLogo = result.gameLogo ? urlFor(result.gameLogo).width(80).height(80).url() : null;
-  
+
   const getLevelBadge = (level) => {
     const badges = {
       state: { icon: Trophy, color: 'from-yellow-400 to-yellow-600', text: 'State Champion' },
@@ -18,56 +69,6 @@ const ChampionshipCard = ({ result, isExpanded, onToggle }) => {
 
   const badge = getLevelBadge(result.championshipLevel);
   const BadgeIcon = badge.icon;
-
-  const PlacementCard = ({ placement, data, medalColor }) => {
-    if (!data || !data.schoolName) return null;
-
-    const schoolLogo = data.schoolLogo ? urlFor(data.schoolLogo).width(60).height(60).url() : null;
-
-    return (
-      <div className={`bg-slate-900/50 border-2 ${medalColor} rounded-xl p-4 hover:scale-102 transition-transform`}>
-        <div className="flex items-start gap-4">
-          {/* School Logo */}
-          {schoolLogo ? (
-            <div className="w-14 h-14 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0">
-              <img src={schoolLogo} alt={data.schoolName} className="w-full h-full object-cover" />
-            </div>
-          ) : (
-            <div className={`w-14 h-14 rounded-lg bg-gradient-to-br ${medalColor.replace('border-', 'from-').replace('/50', '')} to-slate-700 flex items-center justify-center flex-shrink-0`}>
-              <span className="text-2xl font-bold text-white">{placement}</span>
-            </div>
-          )}
-
-          {/* Team Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-2xl">{placement === 1 ? '🥇' : placement === 2 ? '🥈' : '🥉'}</span>
-              <h4 className="font-bold text-white text-lg">{data.teamName || data.schoolName}</h4>
-            </div>
-            <p className="text-purple-400 font-semibold">{data.schoolName}</p>
-            
-            {data.coachName && (
-              <p className="text-sm text-gray-400 mt-1">Coach: {data.coachName}</p>
-            )}
-
-            {/* Roster - Only show when expanded */}
-            {isExpanded && data.roster && data.roster.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-slate-700">
-                <p className="text-xs text-gray-400 mb-1">Roster:</p>
-                <div className="flex flex-wrap gap-1">
-                  {data.roster.map((player, idx) => (
-                    <span key={idx} className="text-xs bg-slate-800 text-gray-300 px-2 py-1 rounded">
-                      {player}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/30 rounded-xl overflow-hidden hover:border-purple-500 transition-all">
@@ -130,25 +131,28 @@ const ChampionshipCard = ({ result, isExpanded, onToggle }) => {
 
       {/* Placements */}
       <div className="p-6 space-y-3">
-        <PlacementCard 
-          placement={1} 
-          data={result.firstPlace} 
+        <PlacementCard
+          placement={1}
+          data={result.firstPlace}
           medalColor="border-yellow-500/50"
+          isExpanded={isExpanded}
         />
-        
+
         {result.secondPlace?.schoolName && (
-          <PlacementCard 
-            placement={2} 
-            data={result.secondPlace} 
+          <PlacementCard
+            placement={2}
+            data={result.secondPlace}
             medalColor="border-gray-400/50"
+            isExpanded={isExpanded}
           />
         )}
-        
+
         {result.thirdPlace?.schoolName && (
-          <PlacementCard 
-            placement={3} 
-            data={result.thirdPlace} 
+          <PlacementCard
+            placement={3}
+            data={result.thirdPlace}
             medalColor="border-orange-600/50"
+            isExpanded={isExpanded}
           />
         )}
       </div>
