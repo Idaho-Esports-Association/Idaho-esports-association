@@ -158,7 +158,7 @@ export const NewsletterSignup = ({ inline = false }) => {
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full px-4 py-2 bg-slate-900 border border-purple-500/30 rounded-lg text-white focus:outline-none focus:border-purple-500"
               />
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-xs text-gray-400 leading-relaxed">
                 By checking this box and providing your phone number, you
                 consent to receive recurring automated text messages from Idaho
                 Esports Association. Message frequency varies. Msg &amp; data

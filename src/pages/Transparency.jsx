@@ -283,7 +283,7 @@ export const Transparency = () => {
                               {member.position}
                             </p>
                             {member.termStart && (
-                              <p className="text-sm text-gray-500 mt-1">
+                              <p className="text-sm text-gray-400 mt-1">
                                 Term: {new Date(member.termStart).getFullYear()}{" "}
                                 -{" "}
                                 {member.termEnd
@@ -455,7 +455,7 @@ export const Transparency = () => {
                               {report.fiscalPeriod || ""}
                             </p>
                           </div>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-400">
                             {new Date(report.reportDate).toLocaleDateString(
                               "en-US",
                               {

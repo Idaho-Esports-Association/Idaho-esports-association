@@ -180,7 +180,7 @@ export const ExpectingIndex = () => {
                       )}
 
                       {article.publishedAt && (
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                        <div className="flex items-center space-x-2 text-sm text-gray-400">
                           <Calendar className="w-4 h-4" />
                           <span>
                             {new Date(article.publishedAt).toLocaleDateString(

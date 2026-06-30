@@ -110,7 +110,7 @@ const DayColumn = ({ day, scheduleItems }) => {
       {/* Games List */}
       <div className="p-4 space-y-3">
         {scheduleItems.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-400">
             No games scheduled
           </div>
         ) : (
@@ -255,11 +255,11 @@ export const Schedule = () => {
         </div>
       ) : scheduleItems.length === 0 && selectedDivision === 'all' ? (
         <div className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/30 rounded-xl p-12 text-center">
-          <Calendar className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+          <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-400 text-lg mb-2">
             No games currently scheduled
           </p>
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-400 text-sm">
             Check back soon for the latest schedule, or contact us for more information.
           </p>
         </div>

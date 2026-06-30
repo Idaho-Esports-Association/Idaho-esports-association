@@ -81,7 +81,7 @@ const RuleCard = ({ rule, isOpen, onToggle }) => {
         </div>
         <div className="flex items-center space-x-4">
           {rule.lastUpdated && (
-            <span className="text-sm text-gray-500 hidden sm:block">
+            <span className="text-sm text-gray-400 hidden sm:block">
               Updated{" "}
               {new Date(rule.lastUpdated).toLocaleDateString("en-US", {
                 month: "short",
@@ -255,7 +255,7 @@ export const Rules = () => {
                   placeholder="Search rules..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-purple-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-purple-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
                 />
               </div>
 
