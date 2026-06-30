@@ -46,7 +46,7 @@ export const Games = () => {
           <div className="relative">
             <input
               type="text"
-              className="w-full pl-4 pr-4 py-3 bg-slate-900 border border-purple-500/30 rounded-lg text-white placeholder-gray-500"
+              className="w-full pl-4 pr-4 py-3 bg-slate-900 border border-purple-500/30 rounded-lg text-white placeholder-gray-400"
               placeholder="Search games..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}

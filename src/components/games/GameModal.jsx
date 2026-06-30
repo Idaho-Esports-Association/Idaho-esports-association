@@ -1,7 +1,61 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
 export const GameModal = ({ game, onClose }) => {
+  const dialogRef = useRef(null);
+  const previouslyFocused = useRef(null);
+
+  useEffect(() => {
+    if (!game) return;
+
+    // Remember what had focus so we can restore it on close.
+    previouslyFocused.current = document.activeElement;
+
+    const dialog = dialogRef.current;
+    const getFocusable = () =>
+      dialog
+        ? Array.from(
+            dialog.querySelectorAll(
+              'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+            ),
+          )
+        : [];
+
+    // Move focus into the dialog.
+    const focusable = getFocusable();
+    (focusable[0] || dialog)?.focus();
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key === "Tab") {
+        const items = getFocusable();
+        if (items.length === 0) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      // Restore focus to the trigger when the dialog unmounts.
+      if (previouslyFocused.current instanceof HTMLElement) {
+        previouslyFocused.current.focus();
+      }
+    };
+  }, [game, onClose]);
+
   if (!game) return null;
 
   const logo = game.logo || game.externalLogoUrl;
@@ -10,9 +64,17 @@ export const GameModal = ({ game, onClose }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
       <div className="absolute inset-0 bg-black/60" onClick={onClose}></div>
 
-      <div className="relative w-full max-w-3xl bg-slate-900/90 border border-purple-500/30 rounded-2xl p-6 backdrop-blur-sm z-10 max-h-[90vh] overflow-y-auto">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="game-modal-title"
+        tabIndex={-1}
+        className="relative w-full max-w-3xl bg-slate-900/90 border border-purple-500/30 rounded-2xl p-6 backdrop-blur-sm z-10 max-h-[90vh] overflow-y-auto"
+      >
         <button
           onClick={onClose}
+          aria-label="Close dialog"
           className="absolute right-4 top-4 p-2 rounded-full hover:bg-slate-800"
         >
           <X className="w-5 h-5 text-purple-300" />
@@ -32,7 +94,7 @@ export const GameModal = ({ game, onClose }) => {
           </div>
 
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white">{game.name}</h2>
+            <h2 id="game-modal-title" className="text-2xl font-bold text-white">{game.name}</h2>
             <p className="text-gray-400 mt-1">
               {game.genre} • {game.esrb}
             </p>

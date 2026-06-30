@@ -141,11 +141,11 @@ export const Footer = () => {
                 href="https://app.candid.org/profile/15079270/idaho-esports-association-93-2128403/?pkId=dbdcfbf4-f040-410f-814a-f3ec72eaa509"
                 target="_blank"
               >
-                <img src="https://widgets.guidestar.org/prod/v1/pdp/transparency-seal/15079270/svg" />{" "}
+                <img src="https://widgets.guidestar.org/prod/v1/pdp/transparency-seal/15079270/svg" alt="Candid (GuideStar) Transparency Seal" />{" "}
               </a>
               <div className="text-left">
                 <p className="text-sm text-gray-400">Verified Non-Profit</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-400">
                   GuideStar/Candid Certified
                 </p>
               </div>
@@ -154,7 +154,7 @@ export const Footer = () => {
             {/* Right side - 501(c)(3) info */}
             <div className="text-center md:text-right text-gray-400 text-sm">
               <p className="font-semibold">501(c)(3) Non-Profit Organization</p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-400 mt-1">
                 Tax ID: 93-2128403 • Donations are tax-deductible
               </p>
             </div>
@@ -169,7 +169,7 @@ export const Footer = () => {
           <p className="mt-2 text-sm">
             Committed to transparency and fair play in Idaho gaming.
           </p>
-          <div className="mt-3 flex justify-center gap-4 text-xs text-gray-500">
+          <div className="mt-3 flex justify-center gap-4 text-xs text-gray-400">
             <a href="/privacy-policy" className="hover:text-purple-400 transition-colors">
               Privacy Policy
             </a>

@@ -112,7 +112,7 @@ const PortableTextRenderer = ({ content }) => {
             className="rounded-lg w-full"
           />
           {block.alt && (
-            <p className="text-sm text-gray-500 mt-2 text-center italic">
+            <p className="text-sm text-gray-400 mt-2 text-center italic">
               {block.alt}
             </p>
           )}

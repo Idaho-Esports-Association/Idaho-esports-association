@@ -88,7 +88,7 @@ const EmailCard = ({ email }) => {
             <h3 className="text-lg font-bold text-white leading-snug group-hover:text-purple-200 transition-colors">
               {email.subject}
             </h3>
-            <div className="flex items-center gap-2 mt-1.5 text-sm text-gray-500">
+            <div className="flex items-center gap-2 mt-1.5 text-sm text-gray-400">
               <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
               <time dateTime={email.sentAt}>
                 {new Date(email.sentAt).toLocaleDateString('en-US', {
@@ -138,7 +138,7 @@ const EmailCard = ({ email }) => {
         {/* Highlighted links */}
         {email.highlightedLinks && email.highlightedLinks.length > 0 && (
           <div className="border-t border-slate-700/50 pt-4 mt-2">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               Key Links from this Email
             </p>
             <ul className="space-y-1.5">
@@ -296,7 +296,7 @@ export const NewsletterArchive = () => {
                 onChange={e => setSearchTerm(e.target.value)}
                 className="
                   w-full pl-12 pr-4 py-3 bg-slate-900 border border-purple-500/30 rounded-lg
-                  text-white placeholder-gray-500
+                  text-white placeholder-gray-400
                   focus:outline-none focus:border-purple-500
                   transition-colors
                 "
@@ -307,7 +307,7 @@ export const NewsletterArchive = () => {
             {allTags.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <Tag className="w-4 h-4 text-gray-500" />
+                  <Tag className="w-4 h-4 text-gray-400" />
                   <span className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
                     Filter by Topic
                   </span>

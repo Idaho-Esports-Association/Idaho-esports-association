@@ -53,7 +53,7 @@ const ChampionshipCard = ({ result, isExpanded, onToggle }) => {
             {/* Roster - Only show when expanded */}
             {isExpanded && data.roster && data.roster.length > 0 && (
               <div className="mt-3 pt-3 border-t border-slate-700">
-                <p className="text-xs text-gray-500 mb-1">Roster:</p>
+                <p className="text-xs text-gray-400 mb-1">Roster:</p>
                 <div className="flex flex-wrap gap-1">
                   {data.roster.map((player, idx) => (
                     <span key={idx} className="text-xs bg-slate-800 text-gray-300 px-2 py-1 rounded">
@@ -95,7 +95,7 @@ const ChampionshipCard = ({ result, isExpanded, onToggle }) => {
                 {result.division && ` • ${result.division}`}
               </p>
               
-              <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-500">
+              <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-400">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
                   {new Date(result.eventDate).toLocaleDateString('en-US', { 
@@ -288,7 +288,7 @@ export const Champions = () => {
         </div>
       ) : championships.length === 0 ? (
         <div className="bg-slate-800/50 backdrop-blur-sm border border-purple-500/30 rounded-xl p-12 text-center">
-          <Trophy className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+          <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-400 text-lg">
             Championship results will be posted here after each tournament season.
           </p>
@@ -306,7 +306,7 @@ export const Champions = () => {
                   placeholder="Search by game, school, or team..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-purple-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-purple-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
                 />
               </div>
 

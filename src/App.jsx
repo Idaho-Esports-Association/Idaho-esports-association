@@ -16,6 +16,7 @@ import { CoachHelp } from "./pages/CoachHelp";
 import { Games } from "./pages/Games";
 import { AnnouncementBanner } from "./components/common/AnnouncementBanner";
 import { ScrollToTop } from "./components/common/ScrollToTop";
+import { PageTitle } from "./components/common/PageTitle";
 import { Schedule } from "./pages/Schedule";
 import { Transparency } from "./pages/Transparency";
 import { Champions } from "./pages/Champions";
@@ -27,10 +28,17 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <PageTitle />
       <div className="min-h-screen bg-slate-900 text-white flex flex-col">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg"
+        >
+          Skip to main content
+        </a>
         <Header />
         <AnnouncementBanner />
-        <main className="flex-grow">
+        <main id="main-content" tabIndex={-1} className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/expecting" element={<ExpectingIndex />} />
