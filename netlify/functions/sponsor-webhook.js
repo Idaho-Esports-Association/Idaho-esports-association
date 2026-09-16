@@ -1,4 +1,4 @@
-const { createClient } = require('@sanity/client');
+import { createClient } from '@sanity/client';
 
 const sanityClient = createClient({
   projectId: process.env.PROJECT_ID,
@@ -7,7 +7,7 @@ const sanityClient = createClient({
   apiVersion: '2024-01-01',
 });
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
     // Allow CORS for OBS browser sources
     const headers = {
         'Access-Control-Allow-Origin': '*',

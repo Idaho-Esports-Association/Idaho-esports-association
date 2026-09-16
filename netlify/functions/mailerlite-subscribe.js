@@ -1,4 +1,4 @@
-exports.handler = async (event) => {
+export const handler = async (event) => {
   // Log for debugging
   console.log('MailerLite function called');
   console.log('Method:', event.httpMethod);
