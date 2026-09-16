@@ -13,7 +13,8 @@ exports.handler = async (event) => {
 
   try {
     const { email, name, phone, smsOptIn, groups } = JSON.parse(event.body);
-    console.log('Received data:', { email, name, phone, smsOptIn, groups });
+    // Deliberately not logging the phone number itself.
+    console.log('Received data:', { email, name, hasPhone: Boolean(phone), smsOptIn, groups });
 
     // Validate email
     if (!email || !email.includes('@')) {
@@ -21,11 +22,6 @@ exports.handler = async (event) => {
         statusCode: 400,
         body: JSON.stringify({ error: 'Valid email is required' }),
       };
-    }
-    if (phone) subscriberFields.phone = phone;
-    if (smsOptIn && phone) {
-      subscriberFields.sms_consent = 'yes';
-      subscriberFields.sms_consent_timestamp = new Date().toISOString();
     }
     // Check if API key exists
     if (!process.env.MAILERLITE_API_KEY) {
@@ -50,6 +46,17 @@ exports.handler = async (event) => {
       };
     }
 
+    // Subscriber fields sent to MailerLite. sms_consent and its timestamp are
+    // the A2P 10DLC consent record, so they have to reach MailerLite rather
+    // than just being computed here.
+    const subscriberFields = { name: name || '' };
+
+    if (phone) subscriberFields.phone = phone;
+    if (smsOptIn && phone) {
+      subscriberFields.sms_consent = 'yes';
+      subscriberFields.sms_consent_timestamp = new Date().toISOString();
+    }
+
     console.log('Calling MailerLite API...');
 
     // Determine which API version to use based on API key format
@@ -70,9 +77,7 @@ exports.handler = async (event) => {
         },
         body: JSON.stringify({
           email: email,
-          fields: {
-            name: name || '',
-          },
+          fields: subscriberFields,
           groups: safeGroups.length > 0 && groupId ? [groupId] : [],
         }),
       });
@@ -88,6 +93,7 @@ exports.handler = async (event) => {
         body: JSON.stringify({
           email: email,
           name: name || '',
+          fields: subscriberFields,
           groups: safeGroups.length > 0 && groupId ? [groupId] : [],
         }),
       });
