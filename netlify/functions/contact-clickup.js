@@ -96,7 +96,7 @@ async function storeSanitySubmission(formData, clickupTask) {
     return null;
   }
 
-  const { createClient } = require('@sanity/client');
+  const { createClient } = await import('@sanity/client');
   
   const sanityClient = createClient({
     projectId: process.env.SANITY_PROJECT_ID,
@@ -121,7 +121,7 @@ async function storeSanitySubmission(formData, clickupTask) {
   return await sanityClient.create(doc);
 }
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log('ClickUp contact form handler called');
   
   const headers = {

@@ -152,7 +152,7 @@ async function storeCoachSubmission(formData, clickupTask) {
         return null;
     }
 
-    const { createClient } = require('@sanity/client');
+    const { createClient } = await import('@sanity/client');
 
     const sanityClient = createClient({
         projectId: process.env.SANITY_PROJECT_ID,
@@ -181,7 +181,7 @@ async function storeCoachSubmission(formData, clickupTask) {
     return await sanityClient.create(doc);
 }
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
     console.log('Coach help form handler called');
 
     const headers = {

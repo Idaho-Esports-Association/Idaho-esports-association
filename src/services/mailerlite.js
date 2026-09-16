@@ -1,5 +1,10 @@
-export const subscribeToNewsletter = async (email, name) => {
-  console.log('🔵 Starting newsletter subscription:', { email, name });
+export const subscribeToNewsletter = async (
+  email,
+  name,
+  phone = null,
+  smsOptIn = false,
+) => {
+  console.log('🔵 Starting newsletter subscription:', { email, name, smsOptIn });
 
   try {
     console.log('🔵 Calling function at:', '/.netlify/functions/mailerlite-subscribe');
