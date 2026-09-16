@@ -22,6 +22,8 @@
  *   --to YYYY     Last calendar year to include (default: current year)
  *   --list        Print every season with its id/state/exclusion status and
  *                 exit. Use this to populate participation-exclusions.json.
+ *   --probe       Report which API endpoints this key can actually reach, and
+ *                 exit. Start here if you get a 401 or 403.
  *   --dry-run     Compute and print the summary but do not write the file.
  *   --out PATH    Override the output path.
  *
@@ -111,11 +113,19 @@ function titleName(stdAct) {
 }
 
 function parseArgs(argv) {
-  const args = { list: false, dryRun: false, out: null, from: 2018, to: new Date().getFullYear() };
+  const args = {
+    list: false,
+    probe: false,
+    dryRun: false,
+    out: null,
+    from: 2018,
+    to: new Date().getFullYear(),
+  };
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--list') args.list = true;
+    else if (arg === '--probe') args.probe = true;
     else if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--from') args.from = Number(argv[++i]);
     else if (arg === '--to') args.to = Number(argv[++i]);
@@ -156,10 +166,95 @@ async function apiGet(endpoint) {
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`LeagueOS ${response.status} for ${endpoint}: ${body.slice(0, 300)}`);
+    const error = new Error(`LeagueOS ${response.status} for ${endpoint}: ${body.slice(0, 300)}`);
+
+    if (response.status === 401 || response.status === 403) {
+      error.hint = [
+        'That is an authorization failure, not a bad request.',
+        '',
+        'The existing Netlify functions only call /league/groups, /league/teams',
+        'and /league/members. This script also needs /league/seasons and',
+        '/league/matches, which your key may not be entitled to.',
+        '',
+        'Run `npm run participation -- --probe` to see exactly which endpoints',
+        'the key can reach, then ask LeagueOS to enable the ones that fail.',
+      ].join('\n');
+    }
+
+    throw error;
   }
 
   return response.json();
+}
+
+/**
+ * Reports which endpoints this key can actually reach.
+ *
+ * Worth having as a first-class mode: a 403 on one endpoint says nothing about
+ * the others, and "is the key wrong or is the league not entitled?" is the
+ * first question every time.
+ */
+async function probe() {
+  const now = Math.floor(Date.now() / 1000);
+  const year = 365 * 24 * 60 * 60;
+
+  const checks = [
+    ['/league/league', 'league info'],
+    ['/league/groups?ipp=1', 'groups (used by the existing Netlify functions)'],
+    ['/league/league/stats', 'aggregate league counts'],
+    ['/league/seasons?ipp=1&page=0', 'seasons (needed: season names, dates, titles)'],
+    ['/league/seasons.rpc/references', 'seasons, simplified'],
+    [`/league/matches?ipp=1&page=0&start=${now - year}&end=${now}`, 'matches (needed: who played)'],
+  ];
+
+  console.log(`Probing ${API_URL} with the supplied key ...\n`);
+
+  let anyDenied = false;
+
+  for (const [endpoint, label] of checks) {
+    let line;
+    try {
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        headers: {
+          'x-leagueos-api-key': API_KEY,
+          'Content-Type': 'application/json',
+          'User-Agent': 'Idaho-Esports-Association-Participation/1.0',
+        },
+      });
+
+      if (response.ok) {
+        const body = await response.json();
+        const data = body && body.data;
+        const count = Array.isArray(data)
+          ? data.length
+          : data && typeof data.total === 'number'
+            ? data.total
+            : null;
+        line = `  ok   ${response.status}${count === null ? '' : `  (${count} available)`}`;
+      } else {
+        if (response.status === 401 || response.status === 403) anyDenied = true;
+        const text = await response.text();
+        let message = text.slice(0, 120);
+        try {
+          message = JSON.parse(text).message || message;
+        } catch {
+          // Non-JSON body; the raw text is already the best we have.
+        }
+        line = `  FAIL ${response.status}  ${message}`;
+      }
+    } catch (error) {
+      line = `  FAIL --   ${error.message}`;
+    }
+
+    console.log(`${label}\n    ${endpoint}\n  ${line}\n`);
+  }
+
+  if (anyDenied) {
+    console.log('At least one endpoint was denied.');
+    console.log('If /league/groups succeeds but /league/seasons and /league/matches do not,');
+    console.log('the key is valid and the league simply is not enabled for those endpoints.');
+    console.log('Ask LeagueOS support to enable League API access for seasons and matches.');
+  }
 }
 
 /**
@@ -335,7 +430,13 @@ async function main() {
   if (!API_KEY) {
     console.error('LEAGUEOS_API_KEY is not set.');
     console.error('Run: LEAGUEOS_API_KEY=your-key npm run participation');
-    process.exit(1);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (args.probe) {
+    await probe();
+    return;
   }
 
   const exclusions = loadExclusions();
@@ -580,5 +681,8 @@ async function main() {
 
 main().catch(error => {
   console.error(`\nFailed: ${error.message}`);
-  process.exit(1);
+  if (error.hint) console.error(`\n${error.hint}`);
+  // Set the code rather than calling process.exit(), which can abort Node on
+  // Windows while a partial stdout write is still in flight.
+  process.exitCode = 1;
 });
