@@ -1,0 +1,14 @@
+{
+  "_comment": [
+    "Seasons excluded from the public participation snapshot.",
+    "Run `npm run participation -- --list` to print every season the API returns,",
+    "with its id, state and whether it is currently excluded. Add the test/demo",
+    "seasons here, or hide them in LeagueOS and add their EventState to",
+    "excludeEventStates instead.",
+    "seasonNamePatterns are case-insensitive regular expressions matched against",
+    "the season name."
+  ],
+  "seasonIds": [],
+  "seasonNamePatterns": ["test", "demo", "sandbox", "practice run"],
+  "excludeEventStates": []
+}

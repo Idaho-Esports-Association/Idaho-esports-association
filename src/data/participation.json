@@ -1,0 +1,17 @@
+{
+  "$schema": "participation-snapshot/1",
+  "generatedAt": null,
+  "range": { "from": null, "to": null },
+  "definition": "A participant is a student who played in at least one game of at least one match that reached a played state (finished, verifying or disputed). Registered students who never played are not counted.",
+  "matchStatesCounted": ["finished", "verifying", "disputed"],
+  "totals": {
+    "uniquePlayers": 0,
+    "schools": 0,
+    "titles": 0,
+    "matches": 0,
+    "schoolYears": 0
+  },
+  "excludedSeasons": [],
+  "notes": { "skippedMatches": 0, "unattributedMatches": 0 },
+  "years": []
+}
