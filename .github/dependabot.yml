@@ -1,0 +1,41 @@
+version: 2
+updates:
+  # Front-end app (Vite + React)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      app-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      app-minor-and-patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Sanity Studio
+  - package-ecosystem: "npm"
+    directory: "/sanity"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      studio-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      studio-minor-and-patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"

@@ -72,15 +72,6 @@ export const AnnouncementBanner = () => {
   const config = variantConfig[variant] || variantConfig.info;
   const Icon = config.icon;
 
-  const BannerContent = () => (
-    <div className="flex items-center justify-center gap-3 flex-1 min-w-0 px-4">
-      <Icon className={`w-5 h-5 flex-shrink-0 ${config.iconColor}`} />
-      <p className={`${config.text} font-semibold text-sm md:text-base text-center`}>
-        {message}
-      </p>
-    </div>
-  );
-
   return (
     <div className={`sticky top-16 z-40 ${config.bg} backdrop-blur-md border-b ${config.border} shadow-lg animate-slideDown`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -98,7 +89,12 @@ export const AnnouncementBanner = () => {
               </p>
             </a>
           ) : (
-            <BannerContent />
+            <div className="flex items-center justify-center gap-3 flex-1 min-w-0 px-4">
+              <Icon className={`w-5 h-5 flex-shrink-0 ${config.iconColor}`} />
+              <p className={`${config.text} font-semibold text-sm md:text-base text-center`}>
+                {message}
+              </p>
+            </div>
           )}
           
           <button
