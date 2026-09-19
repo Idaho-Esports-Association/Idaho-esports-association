@@ -36,15 +36,27 @@
  * league tags, or team rosters. Schools are institutions and are named
  * deliberately; students never are.
  *
+ * WHERE THE DATA COMES FROM
+ * Not /league/matches. That is a schedule endpoint returning only upcoming and
+ * in-flight matches -- for this league it surfaced 64 of 2599 matches, almost
+ * none of them finished. We walk seasons -> stages -> matches instead, which
+ * reproduces the league's own match count exactly.
+ *
+ * Stage matches arrive as IMatch, with no rosters attached, so players come
+ * from /league/stages/{id}/rosters and are tied to real play by intersecting
+ * each roster against the teams appearing in matches that reached a played
+ * state (finished / verifying / disputed).
+ *
  * WHO COUNTS AS A PARTICIPANT
- * Only students who actually played. For each match that reached a played state
- * (finished / verifying / disputed) we take, per title:
- *   - playerStats: the players LeagueOS recorded a score or stat line for, when
- *     the title tracks per-player data. This is ground truth.
- *   - lineup: otherwise, the players on the match roster, minus anyone flagged
- *     inactive for every game, and minus teams that forfeited or no-showed.
- * Which method produced each title's number is recorded in the snapshot so the
- * page can footnote it honestly.
+ *   - memberStats: where LeagueOS recorded per-member results, only members
+ *     carrying a win, loss or draw. Closest thing to "played at least one game".
+ *   - roster: otherwise, every member of a roster whose team competed. This
+ *     over-counts a benched substitute, because no finer evidence exists.
+ * This league records no per-player game stats at all (every sampled match had
+ * gamesWithPlayerStats = 0), so the strict reading of "played at least one
+ * game" is not derivable from the API. Each title's basis is recorded in the
+ * snapshot, and `rostered` is published next to `players` so the gap is
+ * visible rather than hidden.
  */
 
 import fs from 'node:fs';
@@ -63,6 +75,7 @@ const PLAYED_STATES = new Set(['finished', 'verifying', 'disputed']);
 
 const MAX_PAGES = 200;
 const PAGE_SIZE = 100;
+const SEASON_CONCURRENCY = 4;
 
 // Friendly names for the stdAct codes a scholastic league is likely to run.
 // Unmapped codes fall through to the raw value so nothing is silently dropped.
@@ -315,101 +328,171 @@ function exclusionReason(season, exclusions) {
 }
 
 /**
- * Works out which members actually played in a match, and which teams they
- * played for.
+ * Did this roster member actually compete?
  *
- * Returns the set of member IDs, the teams that genuinely took part, and which
- * of the two methods produced it, so the caller can report the basis rather
- * than quietly mixing them. Teams are returned alongside players so a school
- * whose only appearance was a forfeit is not credited with playing.
+ * Only counts fields that imply playing. Deliberately ignores elo (seeded
+ * non-zero at registration), sos, byes, forfeitWins and noShows -- none of
+ * which mean the student sat down and played.
  */
-function playersInMatch(match) {
-  const games = Array.isArray(match.games) ? match.games : [];
-  const fromStats = new Set();
-  const statTeams = new Set();
+const PLAYED_STAT_FIELDS = ['wins', 'losses', 'draws', 'gameWins', 'gameLosses', 'gameDraws'];
 
-  games.forEach(game => {
-    const teamStats = game && game.teamStats;
-    if (!teamStats || typeof teamStats !== 'object') return;
+function memberPlayed(member) {
+  const stats = member && member.stats;
+  if (!stats || typeof stats !== 'object') return false;
+  return PLAYED_STAT_FIELDS.some(field => typeof stats[field] === 'number' && stats[field] > 0);
+}
 
-    Object.entries(teamStats).forEach(([teamId, stats]) => {
-      if (!stats || typeof stats !== 'object') return;
+// A roster is keyed differently for team vs individual events, so check every
+// identifier it might carry against the teams that actually played.
+function rosterCompeted(roster, teamsThatPlayed) {
+  return [roster.teamId, roster.sourceId, roster.id, roster.originId, roster.rootId, roster.memberId]
+    .filter(Boolean)
+    .some(id => teamsThatPlayed.has(id));
+}
 
-      const ids = [
-        ...Object.keys(stats.playerScores || {}),
-        ...Object.keys(stats.playerStats || {}),
-      ];
+function rosterMembers(roster) {
+  const members = roster.members && typeof roster.members === 'object' ? roster.members : {};
+  const entries = Object.entries(members);
+  if (entries.length > 0) return entries;
+  // Individual-activity rosters wrap a single member with no members map.
+  return roster.memberId ? [[roster.memberId, roster]] : [];
+}
 
-      if (ids.length > 0) statTeams.add(teamId);
-      ids.forEach(id => fromStats.add(id));
-    });
-  });
+// Runs tasks with a bounded number in flight, preserving input order.
+async function mapWithConcurrency(items, limit, worker) {
+  const out = new Array(items.length);
+  let cursor = 0;
 
-  if (fromStats.size > 0) {
-    return { players: fromStats, teams: statTeams, method: 'playerStats' };
-  }
-
-  // Fall back to the match lineup, discounting teams that never actually
-  // played and members flagged inactive for every game in the match.
-  const skipTeams = new Set([...(match.forfeits || []), ...(match.noShows || [])]);
-
-  const inactiveEverywhere = new Set();
-  if (games.length > 0) {
-    const perGame = games.map(game => new Set(game && game.inactivePlayerIds ? game.inactivePlayerIds : []));
-    perGame[0].forEach(id => {
-      if (perGame.every(set => set.has(id))) inactiveEverywhere.add(id);
-    });
-  }
-
-  const players = new Set();
-  const teams = new Set();
-  const rosters = match.rosters && typeof match.rosters === 'object' ? match.rosters : {};
-
-  Object.entries(rosters).forEach(([teamId, roster]) => {
-    if (skipTeams.has(teamId) || !roster) return;
-
-    const members = roster.members && typeof roster.members === 'object' ? roster.members : {};
-    const ids = Object.keys(members);
-    const before = players.size;
-
-    if (ids.length > 0) {
-      ids.forEach(id => {
-        if (!inactiveEverywhere.has(id)) players.add(id);
-      });
-    } else if (roster.memberId && !inactiveEverywhere.has(roster.memberId)) {
-      // Individual-activity rosters wrap a single member with no members map.
-      players.add(roster.memberId);
+  async function runner() {
+    while (cursor < items.length) {
+      const index = cursor++;
+      out[index] = await worker(items[index], index);
     }
+  }
 
-    if (players.size > before || ids.some(id => !inactiveEverywhere.has(id))) teams.add(teamId);
-  });
-
-  return { players, teams, method: 'lineup' };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, runner));
+  return out;
 }
 
 /**
- * Schools credited for a match: the parents of the teams that actually played.
- * A team that forfeited or no-showed is already absent from `teams`, so a
- * school only ever appears on the strength of a match it really competed in.
+ * Collects participation for one season by walking its stages.
+ *
+ * /league/matches is a schedule endpoint: it returns only upcoming and
+ * in-flight matches, so it misses nearly every completed game (64 of 2599 for
+ * this league). Enumerating seasons -> stages -> matches returns the full
+ * history instead.
+ *
+ * Stage matches come back as IMatch, without rosters, so players come from
+ * /league/stages/{id}/rosters and are tied to actual play by intersecting each
+ * roster against the teams appearing in matches that reached a played state.
  */
-function schoolsInMatch(match, groupNames, teams) {
+async function collectSeason(season, groupNames) {
+  const players = new Set();
+  const rostered = new Set();
   const schools = new Map();
-  const rosters = match.rosters && typeof match.rosters === 'object' ? match.rosters : {};
-  const nameFor = (id, name) => name || groupNames.get(id) || null;
+  let totalMatches = 0;
+  let playedMatches = 0;
+  let stageCount = 0;
+  let sawMemberStats = false;
 
-  teams.forEach(teamId => {
-    const parent = rosters[teamId] && rosters[teamId].parent;
-    if (parent && parent.id) schools.set(parent.id, nameFor(parent.id, parent.name));
-  });
-
-  // Only fall back to groupIds when the match carried no usable roster data at
-  // all -- otherwise this would re-add the forfeiting school we just excluded.
-  if (schools.size === 0 && Object.keys(rosters).length === 0) {
-    (match.groupIds || []).forEach(id => schools.set(id, nameFor(id, null)));
+  let stages = [];
+  try {
+    stages = (await apiGet(`/league/seasons/${season.id}/stages`)).data || [];
+  } catch (error) {
+    console.warn(`  ! stages failed for season ${season.id}: ${error.message.slice(0, 80)}`);
+    return { players, rostered, schools, totalMatches, playedMatches, stages: 0, method: 'roster' };
   }
 
-  return schools;
+  for (const stage of stages) {
+    if (!stage || !stage.id) continue;
+    stageCount++;
+
+    let matches = [];
+    try {
+      matches = await paginate(
+        page => `/league/stages/${stage.id}/matches?ipp=${PAGE_SIZE}&page=${page}`,
+        `stage ${stage.id} matches`
+      );
+    } catch (error) {
+      console.warn(`  ! matches failed for stage ${stage.id}: ${error.message.slice(0, 80)}`);
+      continue;
+    }
+
+    totalMatches += matches.length;
+
+    const teamsThatPlayed = new Set();
+    // groupIds cannot be mapped back to individual teams, so a forfeiting
+    // school is indistinguishable in it. Only used if no roster carries a
+    // parent, which would otherwise leave the stage with no schools at all.
+    const groupIdFallback = new Set();
+    let stagePlayed = 0;
+
+    matches.forEach(match => {
+      if (!PLAYED_STATES.has(match.state)) return;
+      stagePlayed++;
+
+      // Teams that forfeited or no-showed did not play.
+      const skip = new Set([...(match.forfeits || []), ...(match.noShows || [])]);
+      (match.teamIds || []).forEach(id => {
+        if (!skip.has(id)) teamsThatPlayed.add(id);
+      });
+      (match.groupIds || []).forEach(id => groupIdFallback.add(id));
+    });
+
+    playedMatches += stagePlayed;
+    if (stagePlayed === 0) continue;
+
+    let rosters = [];
+    try {
+      rosters = (await apiGet(`/league/stages/${stage.id}/rosters`)).data || [];
+    } catch (error) {
+      console.warn(`  ! rosters failed for stage ${stage.id}: ${error.message.slice(0, 80)}`);
+      continue;
+    }
+
+    let namedASchool = false;
+
+    rosters.forEach(roster => {
+      if (!roster || roster.state === 'cancelled') return;
+      if (!rosterCompeted(roster, teamsThatPlayed)) return;
+
+      const parent = roster.parent;
+      if (parent && parent.id) {
+        namedASchool = true;
+        schools.set(parent.id, parent.name || schools.get(parent.id) || groupNames.get(parent.id) || null);
+      }
+
+      rosterMembers(roster).forEach(([memberId, member]) => {
+        rostered.add(memberId);
+        if (memberPlayed(member)) {
+          sawMemberStats = true;
+          players.add(memberId);
+        }
+      });
+    });
+
+    if (!namedASchool) {
+      groupIdFallback.forEach(id => {
+        if (!schools.has(id)) schools.set(id, groupNames.get(id) || null);
+      });
+    }
+  }
+
+  // Where no member carries stats, per-member evidence does not exist and the
+  // rostered set is the most honest answer available.
+  if (!sawMemberStats) rostered.forEach(id => players.add(id));
+
+  return {
+    players,
+    rostered,
+    schools,
+    totalMatches,
+    playedMatches,
+    stages: stageCount,
+    method: sawMemberStats ? 'memberStats' : 'roster',
+  };
 }
+
 
 async function loadGroupNames() {
   const body = await apiGet('/league/groups?ipp=400');
@@ -765,87 +848,84 @@ async function main() {
   const allTimeTitles = new Set();
   let allTimeMatches = 0;
   let skippedMatches = 0;
-  let unattributedMatches = 0;
+  let stagesSeen = 0;
 
-  for (let startYear = args.from - 1; startYear <= args.to; startYear++) {
-    const label = `${startYear}-${String((startYear + 1) % 100).padStart(2, '0')}`;
-    const { start, end } = schoolYearBounds(startYear);
+  const included = seasons.filter(season => !seasonIndex.get(season.id).excluded);
+  console.log(`Walking ${included.length} season(s) by stage ...`);
 
-    process.stdout.write(`Loading matches for ${label} ... `);
-
-    // `states` is an array param with an unclear encoding, so we pull the
-    // window and filter on match.state here instead of guessing a format.
-    const matches = await paginate(
-      page => `/league/matches?ipp=${PAGE_SIZE}&page=${page}&start=${start}&end=${end}`,
-      `matches ${label}`
+  const perSeason = await mapWithConcurrency(included, SEASON_CONCURRENCY, async season => {
+    const entry = seasonIndex.get(season.id);
+    const collected = await collectSeason(season, groupNames);
+    process.stdout.write(
+      `  ${(season.stdAct || '?').padEnd(12)} ${String(collected.playedMatches).padStart(4)} played` +
+        ` / ${String(collected.totalMatches).padStart(4)} matches` +
+        `  ${String(collected.players.size).padStart(4)} players` +
+        `  "${(season.name || '').slice(0, 44)}"
+`
     );
+    return { entry, collected };
+  });
 
-    const played = matches.filter(match => PLAYED_STATES.has(match.state));
-    console.log(`${matches.length} match(es), ${played.length} played.`);
+  perSeason.forEach(({ entry, collected }) => {
+    stagesSeen += collected.stages;
+    skippedMatches += collected.totalMatches - collected.playedMatches;
 
-    if (played.length === 0) continue;
+    if (collected.playedMatches === 0) return;
 
-    played.forEach(match => {
-      const season = match.seasonId ? seasonIndex.get(match.seasonId) : null;
+    const yearLabel = entry.schoolYear || 'unknown';
+    const stdAct = entry.title || 'other';
 
-      if (season && season.excluded) {
-        skippedMatches++;
-        return;
-      }
-      if (!season && match.seasonId) unattributedMatches++;
-
-      // Attribute to the season's school year when we know it, so a playoff
-      // played in June lands in the year it belongs to rather than its own.
-      const yearLabel = (season && season.schoolYear) || label;
-      const stdAct = match.stdAct || (season && season.title) || 'other';
-
-      if (!years.has(yearLabel)) {
-        years.set(yearLabel, {
-          schoolYear: yearLabel,
-          titles: new Map(),
-          players: new Set(),
-          schools: new Map(),
-          matches: 0,
-          seasonIds: new Set(),
-        });
-      }
-      const year = years.get(yearLabel);
-
-      if (!year.titles.has(stdAct)) {
-        year.titles.set(stdAct, {
-          title: stdAct,
-          name: titleName(stdAct),
-          players: new Set(),
-          schools: new Map(),
-          matches: 0,
-          methods: new Set(),
-        });
-      }
-      const title = year.titles.get(stdAct);
-
-      const { players, teams, method } = playersInMatch(match);
-      const schools = schoolsInMatch(match, groupNames, teams);
-
-      players.forEach(id => {
-        title.players.add(id);
-        year.players.add(id);
-        allTimePlayers.add(id);
+    if (!years.has(yearLabel)) {
+      years.set(yearLabel, {
+        schoolYear: yearLabel,
+        titles: new Map(),
+        players: new Set(),
+        rostered: new Set(),
+        schools: new Map(),
+        matches: 0,
+        seasonIds: new Set(),
       });
+    }
+    const year = years.get(yearLabel);
 
-      schools.forEach((name, id) => {
-        title.schools.set(id, name || title.schools.get(id) || null);
-        year.schools.set(id, name || year.schools.get(id) || null);
-        allTimeSchools.add(id);
+    if (!year.titles.has(stdAct)) {
+      year.titles.set(stdAct, {
+        title: stdAct,
+        name: titleName(stdAct),
+        players: new Set(),
+        rostered: new Set(),
+        schools: new Map(),
+        matches: 0,
+        methods: new Set(),
       });
+    }
+    const title = year.titles.get(stdAct);
 
-      title.methods.add(method);
-      title.matches++;
-      year.matches++;
-      if (match.seasonId) year.seasonIds.add(match.seasonId);
-      allTimeTitles.add(stdAct);
-      allTimeMatches++;
+    collected.players.forEach(id => {
+      title.players.add(id);
+      year.players.add(id);
+      allTimePlayers.add(id);
     });
-  }
+    collected.rostered.forEach(id => {
+      title.rostered.add(id);
+      year.rostered.add(id);
+    });
+    collected.schools.forEach((name, id) => {
+      title.schools.set(id, name || title.schools.get(id) || null);
+      year.schools.set(id, name || year.schools.get(id) || null);
+      allTimeSchools.add(id);
+    });
+
+    title.methods.add(collected.method);
+    title.matches += collected.playedMatches;
+    year.matches += collected.playedMatches;
+    year.seasonIds.add(entry.id);
+    allTimeTitles.add(stdAct);
+    allTimeMatches += collected.playedMatches;
+  });
+
+  console.log(`  ${stagesSeen} stage(s) walked.`);
+
 
   const schoolNames = ids =>
     [...ids.entries()]
@@ -860,11 +940,14 @@ async function main() {
           title: title.title,
           name: title.name,
           players: title.players.size,
+          // Everyone on a roster that competed, whether or not they have a
+          // stat line. Published alongside `players` so the gap is visible.
+          rostered: title.rostered.size,
           schools: title.schools.size,
           matches: title.matches,
-          // playerStats where the title records per-player data, lineup
-          // otherwise; both when a title changed mid-year.
-          method: [...title.methods].sort().join('+') || 'lineup',
+          // memberStats where LeagueOS recorded per-member results, roster
+          // otherwise; both when a year mixes the two.
+          method: [...title.methods].sort().join('+') || 'roster',
           schoolNames: schoolNames(title.schools),
         }))
         .sort((a, b) => b.players - a.players || a.name.localeCompare(b.name));
@@ -875,6 +958,7 @@ async function main() {
         uniquePlayers: year.players.size,
         // Roster spots filled: that same student counts three times.
         totalCompetitors: titles.reduce((sum, title) => sum + title.players, 0),
+        uniqueRostered: year.rostered.size,
         schools: year.schools.size,
         titleCount: titles.length,
         matches: year.matches,
@@ -890,7 +974,7 @@ async function main() {
     generatedAt: new Date().toISOString(),
     range: { from: args.from, to: args.to },
     definition:
-      'A participant is a student who played in at least one game of at least one match that reached a played state (finished, verifying or disputed). Registered students who never played are not counted.',
+      'A participant is a student on the roster of a team that competed in at least one match reaching a played state (finished, verifying or disputed). Where LeagueOS recorded per-member results, only members with a win, loss or draw on record are counted; elsewhere every member of a competing roster is counted. Students who registered but whose team never played are excluded.',
     matchStatesCounted: [...PLAYED_STATES],
     totals: {
       // Distinct across every year: a four-year player counts once.
@@ -903,7 +987,6 @@ async function main() {
     excludedSeasons: seasonReport.filter(season => season.excluded),
     notes: {
       skippedMatches,
-      unattributedMatches,
     },
     years: yearsOut,
   };
@@ -921,9 +1004,6 @@ async function main() {
       `${snapshot.totals.schools} schools, ${snapshot.totals.matches} matches`
   );
   if (skippedMatches) console.log(`(${skippedMatches} match(es) skipped from excluded seasons)`);
-  if (unattributedMatches) {
-    console.log(`(${unattributedMatches} match(es) referenced a season outside the loaded range)`);
-  }
 
   if (args.dryRun) {
     console.log('\n--dry-run: nothing written.');

@@ -1,17 +1,85 @@
 {
   "$schema": "participation-snapshot/1",
-  "generatedAt": null,
-  "range": { "from": null, "to": null },
+  "generatedAt": "2026-09-19T21:22:48.441Z",
+  "range": {
+    "from": 2018,
+    "to": 2026
+  },
   "definition": "A participant is a student who played in at least one game of at least one match that reached a played state (finished, verifying or disputed). Registered students who never played are not counted.",
-  "matchStatesCounted": ["finished", "verifying", "disputed"],
+  "matchStatesCounted": [
+    "finished",
+    "verifying",
+    "disputed"
+  ],
   "totals": {
-    "uniquePlayers": 0,
-    "schools": 0,
-    "titles": 0,
-    "matches": 0,
-    "schoolYears": 0
+    "uniquePlayers": 44,
+    "schools": 7,
+    "titles": 3,
+    "matches": 4,
+    "schoolYears": 1
   },
   "excludedSeasons": [],
-  "notes": { "skippedMatches": 0, "unattributedMatches": 0 },
-  "years": []
+  "notes": {
+    "skippedMatches": 0,
+    "unattributedMatches": 0
+  },
+  "years": [
+    {
+      "schoolYear": "2024-25",
+      "uniquePlayers": 44,
+      "totalCompetitors": 44,
+      "schools": 7,
+      "titleCount": 3,
+      "matches": 4,
+      "seasonCount": 3,
+      "schoolNames": [
+        "Boise High School",
+        "Gem Prep - Meridian North",
+        "Gem Prep - Online",
+        "Kuna High School",
+        "Mountain Home High School",
+        "Skyline High School",
+        "Timberline High School"
+      ],
+      "titles": [
+        {
+          "title": "overwatch",
+          "name": "Overwatch 2",
+          "players": 28,
+          "schools": 4,
+          "matches": 2,
+          "method": "lineup",
+          "schoolNames": [
+            "Boise High School",
+            "Kuna High School",
+            "Mountain Home High School",
+            "Timberline High School"
+          ]
+        },
+        {
+          "title": "rl",
+          "name": "Rocket League",
+          "players": 10,
+          "schools": 2,
+          "matches": 1,
+          "method": "lineup",
+          "schoolNames": [
+            "Gem Prep - Meridian North",
+            "Gem Prep - Online"
+          ]
+        },
+        {
+          "title": "lol",
+          "name": "League of Legends",
+          "players": 6,
+          "schools": 1,
+          "matches": 1,
+          "method": "lineup",
+          "schoolNames": [
+            "Skyline High School"
+          ]
+        }
+      ]
+    }
+  ]
 }

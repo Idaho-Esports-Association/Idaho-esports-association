@@ -19,17 +19,17 @@ const StatCard = (stat) => (
   </div>
 );
 
-// "playerStats" means LeagueOS recorded a score or stat line for each player;
-// "lineup" means we counted the match roster instead. Spelled out rather than
+// "memberStats" means LeagueOS recorded a per-member result; "roster" means we
+// counted everyone on a roster whose team competed. Spelled out rather than
 // hidden, because the two are not quite the same claim.
 const MethodBadge = ({ method }) => {
-  const exact = method === "playerStats";
+  const exact = method === "memberStats";
   return (
     <span
       title={
         exact
-          ? "Counted from per-player game results recorded by LeagueOS."
-          : "This title does not record per-player results, so we counted the players named in each match lineup, excluding forfeits and players benched for every game."
+          ? "Counted from per-member results recorded by LeagueOS: only students with a win, loss or draw on record."
+          : "LeagueOS holds no per-member results for this game, so we counted every student on a roster whose team competed. This may include a substitute who did not play."
       }
       className={`inline-block px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
         exact
@@ -37,7 +37,7 @@ const MethodBadge = ({ method }) => {
           : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
       }`}
     >
-      {exact ? "per-player results" : "match lineups"}
+      {exact ? "recorded results" : "team rosters"}
     </span>
   );
 };
@@ -233,12 +233,12 @@ export const ParticipationTab = () => {
             <p className="text-white font-semibold">How these numbers are counted</p>
             <p>{participation.definition}</p>
             <p>
-              Where a game records per-player results, we count the students who
-              actually posted a result. Where it does not, we count the students
-              named in each match lineup, excluding teams that forfeited or
-              no-showed and players benched for every game &mdash; which may
-              slightly over-count in those titles. Each game&rsquo;s basis is
-              labelled in the per-game table for that school year.
+              Where LeagueOS recorded a per-member result, we count only
+              students with a win, loss or draw on record. Where it did not, we
+              count every student on a roster whose team competed, excluding
+              teams that forfeited or no-showed &mdash; which may include a
+              substitute who never played. Each game&rsquo;s basis is labelled
+              in the per-game table for that school year.
             </p>
             <p className="flex items-center space-x-2">
               <Swords className="w-4 h-4 text-purple-400" />

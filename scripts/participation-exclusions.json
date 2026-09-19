@@ -2,13 +2,23 @@
   "_comment": [
     "Seasons excluded from the public participation snapshot.",
     "Run `npm run participation -- --list` to print every season the API returns,",
-    "with its id, state and whether it is currently excluded. Add the test/demo",
-    "seasons here, or hide them in LeagueOS and add their EventState to",
-    "excludeEventStates instead.",
+    "with its id, state and whether it is currently excluded.",
     "seasonNamePatterns are case-insensitive regular expressions matched against",
-    "the season name."
+    "the season name.",
+    "",
+    "Gem Prep Internal, Winter Games and the D-91 Invitational are excluded at",
+    "Dalton's direction: internal or invitational events that are not part of",
+    "league participation."
   ],
   "seasonIds": [],
-  "seasonNamePatterns": ["test", "demo", "sandbox", "practice run"],
+  "seasonNamePatterns": [
+    "test",
+    "demo",
+    "sandbox",
+    "practice run",
+    "gem prep internal",
+    "winter games",
+    "d-?91 invitational"
+  ],
   "excludeEventStates": []
 }
