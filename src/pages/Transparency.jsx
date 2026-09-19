@@ -9,8 +9,10 @@ import {
   ExternalLink,
   Mail,
   Linkedin,
+  BarChart3,
 } from "lucide-react";
 import { queries, urlFor } from "../services/sanity";
+import { ParticipationTab } from "../components/transparency/ParticipationTab";
 
 export const Transparency = () => {
   const [boardMembers, setBoardMembers] = useState([]);
@@ -18,7 +20,7 @@ export const Transparency = () => {
   const [financials, setFinancials] = useState([]);
   const [nonprofitInfo, setNonprofitInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("board");
+  const [activeTab, setActiveTab] = useState("participation");
 
   useEffect(() => {
     const loadData = async () => {
@@ -45,6 +47,7 @@ export const Transparency = () => {
   }, []);
 
   const tabs = [
+    { id: "participation", label: "Participation", icon: BarChart3 },
     { id: "board", label: "Board of Directors", icon: Users },
     { id: "meetings", label: "Meeting Minutes", icon: Calendar },
     { id: "financials", label: "Financial Reports", icon: DollarSign },
@@ -239,7 +242,10 @@ export const Transparency = () => {
         </div>
 
         <div className="p-6">
-          {loading ? (
+          {/* Participation is a committed snapshot, so it never waits on Sanity. */}
+          {activeTab === "participation" ? (
+            <ParticipationTab />
+          ) : loading ? (
             <div className="text-center text-purple-400 py-12">Loading...</div>
           ) : (
             <>
