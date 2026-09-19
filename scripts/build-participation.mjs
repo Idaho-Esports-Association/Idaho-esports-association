@@ -523,6 +523,7 @@ async function audit(args) {
 
   console.log('\n=== 5. Cross-check: seasons -> stages -> matches ===');
   let stageMatchTotal = 0;
+  const sampleFinished = [];
   for (const season of allSeasons) {
     let stages = [];
     try {
@@ -543,7 +544,12 @@ async function audit(args) {
           `stage ${stage.id}`
         );
         count += sm.length;
-        sm.forEach(m => states.push(m.state || 'no-state'));
+        sm.forEach(m => {
+          states.push(m.state || 'no-state');
+          if (sampleFinished.length < 3 && m.state === 'finished' && m.id) {
+            sampleFinished.push({ matchId: m.id, stageId: stage.id, seasonId: season.id, title: season.stdAct });
+          }
+        });
       } catch (error) {
         console.log(`  stage ${stage.id}: matches failed (${error.message.slice(0, 60)})`);
       }
@@ -592,7 +598,84 @@ async function audit(args) {
   }
   if (!shown) console.log('  no matches found via the stage path either');
 
-  console.log('\nDone. Section 5 vs 3 tells us whether the date-window walk is losing matches.');
+  // The stage path gives us every match but no rosters, so player counts have
+  // to come from somewhere else. Find out where.
+  console.log('\n=== 7. Where player data lives (for 3 finished matches) ===');
+
+  const anyStat = stats =>
+    stats && typeof stats === 'object'
+      ? Object.values(stats).filter(v => typeof v === 'number' && v > 0).length
+      : 0;
+
+  const describeRosters = rosters => {
+    const list = Array.isArray(rosters) ? rosters : Object.values(rosters || {});
+    const memberCounts = list.map(r =>
+      r && r.members && typeof r.members === 'object' ? Object.keys(r.members).length : 0
+    );
+    const allMembers = list.flatMap(r =>
+      r && r.members && typeof r.members === 'object' ? Object.values(r.members) : []
+    );
+    const withStats = allMembers.filter(m => anyStat(m && m.stats) > 0).length;
+    const stateHist = {};
+    allMembers.forEach(m => {
+      const k = `s${m && m.state !== undefined ? m.state : '?'}`;
+      stateHist[k] = (stateHist[k] || 0) + 1;
+    });
+    return {
+      rosters: list.length,
+      memberCounts,
+      members: allMembers.length,
+      membersWithNonZeroStats: withStats,
+      memberStates: show(stateHist),
+    };
+  };
+
+  for (const s of sampleFinished) {
+    console.log(`\n  --- ${s.title} match ---`);
+
+    try {
+      const ex = (await apiGet(`/los/matches/${s.matchId}`)).data || {};
+      const games = Array.isArray(ex.games) ? ex.games : [];
+      const withPlayerStats = games.filter(g => {
+        const ts = (g && g.teamStats) || {};
+        return Object.values(ts).some(
+          st => st && (Object.keys(st.playerScores || {}).length || Object.keys(st.playerStats || {}).length)
+        );
+      }).length;
+      const d = describeRosters(ex.rosters);
+      console.log(
+        `  /los/matches/{id}          rosters=${d.rosters} members=${d.members} memberCounts=[${d.memberCounts}] ` +
+          `games=${games.length} gamesWithPlayerStats=${withPlayerStats} memberStates=${d.memberStates}`
+      );
+    } catch (error) {
+      console.log(`  /los/matches/{id}          failed: ${error.message.slice(0, 90)}`);
+    }
+
+    try {
+      const sr = (await apiGet(`/league/stages/${s.stageId}/rosters`)).data || [];
+      const d = describeRosters(sr);
+      console.log(
+        `  /league/stages/{id}/rosters rosters=${d.rosters} members=${d.members} ` +
+          `membersWithNonZeroStats=${d.membersWithNonZeroStats} memberStates=${d.memberStates}`
+      );
+    } catch (error) {
+      console.log(`  /league/stages/{id}/rosters failed: ${error.message.slice(0, 90)}`);
+    }
+
+    try {
+      const body = (await apiGet(`/league/seasons/${s.seasonId}/rosters?ipp=100&page=0`)).data || {};
+      const d = describeRosters(body.results);
+      console.log(
+        `  /league/seasons/{id}/rosters total=${body.total ?? '?'} rosters=${d.rosters} members=${d.members} ` +
+          `membersWithNonZeroStats=${d.membersWithNonZeroStats} memberStates=${d.memberStates}`
+      );
+    } catch (error) {
+      console.log(`  /league/seasons/{id}/rosters failed: ${error.message.slice(0, 90)}`);
+    }
+  }
+
+  console.log('\nDone. Section 5 vs 3 shows whether the date-window walk loses matches;');
+  console.log('section 7 shows which endpoint can tell us who actually played.');
 }
 
 async function main() {
