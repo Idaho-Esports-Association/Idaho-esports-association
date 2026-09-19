@@ -1,4 +1,4 @@
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log('LeagueOS schools function called');
 
   // Only allow GET requests
