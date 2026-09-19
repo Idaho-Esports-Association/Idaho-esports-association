@@ -173,14 +173,39 @@ function schoolYearBounds(startYear) {
   };
 }
 
-async function apiGet(endpoint) {
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    headers: {
-      'x-leagueos-api-key': API_KEY,
-      'Content-Type': 'application/json',
-      'User-Agent': 'Idaho-Esports-Association-Participation/1.0',
-    },
-  });
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// Retried because a dropped stage is not a visible error -- it silently
+// removes a whole game from the published numbers.
+const RETRY_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
+const MAX_ATTEMPTS = 4;
+
+async function apiGet(endpoint, attempt = 1) {
+  let response;
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      headers: {
+        'x-leagueos-api-key': API_KEY,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Idaho-Esports-Association-Participation/1.0',
+      },
+    });
+  } catch (networkError) {
+    if (attempt < MAX_ATTEMPTS) {
+      await sleep(250 * 2 ** (attempt - 1));
+      return apiGet(endpoint, attempt + 1);
+    }
+    throw networkError;
+  }
+
+  if (RETRY_STATUSES.has(response.status) && attempt < MAX_ATTEMPTS) {
+    const retryAfter = Number(response.headers.get('retry-after'));
+    const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+      ? retryAfter * 1000
+      : 250 * 2 ** (attempt - 1);
+    await sleep(waitMs);
+    return apiGet(endpoint, attempt + 1);
+  }
 
   if (!response.ok) {
     const body = await response.text();
@@ -298,7 +323,7 @@ async function paginate(buildEndpoint, label) {
     if (!data.hasMore) break;
 
     if (page === MAX_PAGES - 1) {
-      console.warn(`  ! hit the ${MAX_PAGES}-page cap on ${label}; results may be truncated`);
+      throw new Error(`hit the ${MAX_PAGES}-page cap on ${label}; results would be truncated`);
     }
   }
 
@@ -394,13 +419,14 @@ async function collectSeason(season, groupNames) {
   let playedMatches = 0;
   let stageCount = 0;
   let sawMemberStats = false;
+  const failures = [];
 
   let stages = [];
   try {
     stages = (await apiGet(`/league/seasons/${season.id}/stages`)).data || [];
   } catch (error) {
-    console.warn(`  ! stages failed for season ${season.id}: ${error.message.slice(0, 80)}`);
-    return { players, rostered, schools, totalMatches, playedMatches, stages: 0, method: 'roster' };
+    failures.push(`stages for season ${season.id}: ${error.message.slice(0, 120)}`);
+    return { players, rostered, schools, totalMatches, playedMatches, stages: 0, method: 'roster', failures };
   }
 
   for (const stage of stages) {
@@ -414,7 +440,7 @@ async function collectSeason(season, groupNames) {
         `stage ${stage.id} matches`
       );
     } catch (error) {
-      console.warn(`  ! matches failed for stage ${stage.id}: ${error.message.slice(0, 80)}`);
+      failures.push(`matches for stage ${stage.id}: ${error.message.slice(0, 120)}`);
       continue;
     }
 
@@ -446,7 +472,7 @@ async function collectSeason(season, groupNames) {
     try {
       rosters = (await apiGet(`/league/stages/${stage.id}/rosters`)).data || [];
     } catch (error) {
-      console.warn(`  ! rosters failed for stage ${stage.id}: ${error.message.slice(0, 80)}`);
+      failures.push(`rosters for stage ${stage.id}: ${error.message.slice(0, 120)}`);
       continue;
     }
 
@@ -490,6 +516,7 @@ async function collectSeason(season, groupNames) {
     playedMatches,
     stages: stageCount,
     method: sawMemberStats ? 'memberStats' : 'roster',
+    failures,
   };
 }
 
@@ -850,10 +877,11 @@ async function main() {
   let skippedMatches = 0;
   let stagesSeen = 0;
 
-  const included = seasons.filter(season => !seasonIndex.get(season.id).excluded);
-  console.log(`Walking ${included.length} season(s) by stage ...`);
+  // Every season is walked, including excluded ones, so the match total can be
+  // reconciled against the league's own count. Only included ones aggregate.
+  console.log(`Walking ${seasons.length} season(s) by stage ...`);
 
-  const perSeason = await mapWithConcurrency(included, SEASON_CONCURRENCY, async season => {
+  const perSeason = await mapWithConcurrency(seasons, SEASON_CONCURRENCY, async season => {
     const entry = seasonIndex.get(season.id);
     const collected = await collectSeason(season, groupNames);
     process.stdout.write(
@@ -866,11 +894,14 @@ async function main() {
     return { entry, collected };
   });
 
+  const failures = perSeason.flatMap(({ collected }) => collected.failures || []);
+  const matchesSeen = perSeason.reduce((sum, { collected }) => sum + collected.totalMatches, 0);
+
   perSeason.forEach(({ entry, collected }) => {
     stagesSeen += collected.stages;
-    skippedMatches += collected.totalMatches - collected.playedMatches;
 
-    if (collected.playedMatches === 0) return;
+    if (entry.excluded || collected.playedMatches === 0) return;
+    skippedMatches += collected.totalMatches - collected.playedMatches;
 
     const yearLabel = entry.schoolYear || 'unknown';
     const stdAct = entry.title || 'other';
@@ -924,7 +955,45 @@ async function main() {
     allTimeMatches += collected.playedMatches;
   });
 
-  console.log(`  ${stagesSeen} stage(s) walked.`);
+  console.log(`  ${stagesSeen} stage(s) walked, ${matchesSeen} match(es) seen.`);
+
+  // The league knows how many matches it has. If our walk does not reproduce
+  // that number, something was dropped and the snapshot must not be written --
+  // a quietly incomplete file is exactly how wrong numbers get published.
+  let reportedMatches = null;
+  try {
+    const stats = (await apiGet('/league/league/stats')).data || {};
+    reportedMatches = typeof stats.matches === 'number' ? stats.matches : null;
+  } catch (error) {
+    console.warn(`  ! could not read /league/league/stats: ${error.message.slice(0, 90)}`);
+  }
+
+  const problems = [];
+  if (failures.length) {
+    problems.push(`${failures.length} API call(s) failed after retries`);
+  }
+  if (reportedMatches === null) {
+    problems.push('could not reconcile against the league match count');
+  } else if (matchesSeen !== reportedMatches) {
+    problems.push(`walked ${matchesSeen} matches but the league reports ${reportedMatches}`);
+  }
+
+  if (failures.length) {
+    console.error('\nFailures:');
+    failures.slice(0, 20).forEach(f => console.error(`  - ${f}`));
+    if (failures.length > 20) console.error(`  ... and ${failures.length - 20} more`);
+  }
+
+  if (problems.length) {
+    console.error('\nRefusing to write the snapshot:');
+    problems.forEach(problem => console.error(`  - ${problem}`));
+    console.error('\nThe numbers would understate the league. Re-run, and if it persists');
+    console.error('use `npm run participation -- --audit` to see which calls are failing.');
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log(`  reconciled: ${matchesSeen} match(es), matching the league's own count.`);
 
 
   const schoolNames = ids =>
