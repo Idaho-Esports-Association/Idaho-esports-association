@@ -120,6 +120,7 @@ const TITLE_NAMES = {
   fallGuys: 'Fall Guys',
   rocketLeague: 'Rocket League',
   other: 'Other',
+  valorant: 'Valorant',
   custom: 'Custom',
 };
 
