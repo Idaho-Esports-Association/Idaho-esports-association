@@ -24,6 +24,9 @@
  *                 exit. Use this to populate participation-exclusions.json.
  *   --probe       Report which API endpoints this key can actually reach, and
  *                 exit. Start here if you get a 401 or 403.
+ *   --audit       Compare what this script collects against the league's own
+ *                 counts and against the season/stage path, and exit. Use this
+ *                 when the output looks too small.
  *   --dry-run     Compute and print the summary but do not write the file.
  *   --out PATH    Override the output path.
  *
@@ -116,6 +119,7 @@ function parseArgs(argv) {
   const args = {
     list: false,
     probe: false,
+    audit: false,
     dryRun: false,
     out: null,
     from: 2018,
@@ -126,6 +130,7 @@ function parseArgs(argv) {
     const arg = argv[i];
     if (arg === '--list') args.list = true;
     else if (arg === '--probe') args.probe = true;
+    else if (arg === '--audit') args.audit = true;
     else if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--from') args.from = Number(argv[++i]);
     else if (arg === '--to') args.to = Number(argv[++i]);
@@ -424,6 +429,172 @@ async function loadGroupNames() {
   return names;
 }
 
+/**
+ * Diagnoses why a run produced fewer matches than expected.
+ *
+ * Compares what the date-window walk over /league/matches collects against the
+ * league's own aggregate counts and against the season -> stage -> match path,
+ * so we can tell a filtering bug from a pagination bug from genuinely sparse
+ * data. Emits counts and shapes only -- no names, no member IDs.
+ */
+async function audit(args) {
+  const tally = (items, key) => {
+    const out = {};
+    items.forEach(item => {
+      const k = key(item);
+      out[k] = (out[k] || 0) + 1;
+    });
+    return out;
+  };
+  const show = obj =>
+    Object.entries(obj)
+      .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+      .map(([k, v]) => `${k}:${v}`)
+      .join('  ') || '(none)';
+
+  console.log('=== 1. League ground truth (/league/league/stats) ===');
+  try {
+    const stats = await apiGet('/league/league/stats');
+    console.log(`  ${JSON.stringify(stats.data)}`);
+  } catch (error) {
+    console.log(`  unavailable: ${error.message}`);
+  }
+
+  console.log('\n=== 2. All seasons, no date filter ===');
+  const allSeasons = await paginate(
+    page => `/league/seasons?ipp=${PAGE_SIZE}&page=${page}&start=0&end=0`,
+    'seasons (unfiltered)'
+  );
+  console.log(`  count: ${allSeasons.length}`);
+  console.log(
+    `  by school year: ${show(
+      tally(allSeasons, s => {
+        const ts = s.dateStart || s.dateEnd;
+        return ts ? schoolYearOf(new Date(ts * 1000)) : 'no-date';
+      })
+    )}`
+  );
+  console.log(`  by state: ${show(tally(allSeasons, s => `state${s.state}`))}`);
+  console.log(`  by title: ${show(tally(allSeasons, s => s.stdAct || 'none'))}`);
+  const withDates = allSeasons.filter(s => s.dateStart);
+  if (withDates.length) {
+    const min = Math.min(...withDates.map(s => s.dateStart));
+    const max = Math.max(...withDates.map(s => s.dateEnd || s.dateStart));
+    console.log(`  date span: ${new Date(min * 1000).toISOString().slice(0, 10)} .. ${new Date(max * 1000).toISOString().slice(0, 10)}`);
+  }
+  console.log(`  seasons missing dateStart: ${allSeasons.length - withDates.length}`);
+
+  console.log('\n=== 3. Date-window walk over /league/matches (what the build does) ===');
+  console.log('  window     api_total  collected  states');
+  let windowedTotal = 0;
+  for (let startYear = args.from - 1; startYear <= args.to; startYear++) {
+    const label = `${startYear}-${String((startYear + 1) % 100).padStart(2, '0')}`;
+    const { start, end } = schoolYearBounds(startYear);
+
+    const first = await apiGet(`/league/matches?ipp=${PAGE_SIZE}&page=0&start=${start}&end=${end}`);
+    const apiTotal = (first.data && first.data.total) ?? '?';
+    const matches = await paginate(
+      page => `/league/matches?ipp=${PAGE_SIZE}&page=${page}&start=${start}&end=${end}`,
+      `matches ${label}`
+    );
+    windowedTotal += matches.length;
+
+    if (matches.length || apiTotal) {
+      console.log(
+        `  ${label}   ${String(apiTotal).padEnd(9)}  ${String(matches.length).padEnd(9)}  ${show(tally(matches, m => m.state || 'no-state'))}`
+      );
+    }
+  }
+  console.log(`  collected across all windows: ${windowedTotal}`);
+
+  console.log('\n=== 4. Same call with no date window ===');
+  try {
+    const wide = await apiGet('/league/matches?ipp=1&page=0&start=0&end=0');
+    console.log(`  start=0&end=0 reports total: ${(wide.data && wide.data.total) ?? '?'}`);
+  } catch (error) {
+    console.log(`  failed: ${error.message}`);
+  }
+  try {
+    const huge = await apiGet(`/league/matches?ipp=1&page=0&start=0&end=${Math.floor(Date.now() / 1000) + 86400 * 365}`);
+    console.log(`  start=0&end=+1y reports total: ${(huge.data && huge.data.total) ?? '?'}`);
+  } catch (error) {
+    console.log(`  failed: ${error.message}`);
+  }
+
+  console.log('\n=== 5. Cross-check: seasons -> stages -> matches ===');
+  let stageMatchTotal = 0;
+  for (const season of allSeasons) {
+    let stages = [];
+    try {
+      const body = await apiGet(`/league/seasons/${season.id}/stages`);
+      stages = (body && body.data) || [];
+    } catch (error) {
+      console.log(`  season ${season.id}: stages failed (${error.message.slice(0, 60)})`);
+      continue;
+    }
+
+    let count = 0;
+    const states = [];
+    for (const stage of stages) {
+      if (!stage || !stage.id) continue;
+      try {
+        const sm = await paginate(
+          page => `/league/stages/${stage.id}/matches?ipp=${PAGE_SIZE}&page=${page}`,
+          `stage ${stage.id}`
+        );
+        count += sm.length;
+        sm.forEach(m => states.push(m.state || 'no-state'));
+      } catch (error) {
+        console.log(`  stage ${stage.id}: matches failed (${error.message.slice(0, 60)})`);
+      }
+    }
+    stageMatchTotal += count;
+    console.log(
+      `  ${(season.stdAct || '?').padEnd(12)} stages:${String(stages.length).padEnd(3)} matches:${String(count).padEnd(5)} ${show(tally(states, s => s))}  "${(season.name || '').slice(0, 40)}"`
+    );
+  }
+  console.log(`  total via stages: ${stageMatchTotal}   (via date windows: ${windowedTotal})`);
+
+  console.log('\n=== 6. Shape of the first few matches found via stages ===');
+  let shown = 0;
+  outer: for (const season of allSeasons) {
+    let stages = [];
+    try {
+      stages = ((await apiGet(`/league/seasons/${season.id}/stages`)).data) || [];
+    } catch { continue; }
+    for (const stage of stages) {
+      if (!stage || !stage.id || shown >= 5) continue;
+      let sm = [];
+      try {
+        sm = ((await apiGet(`/league/stages/${stage.id}/matches?ipp=5&page=0`)).data || {}).results || [];
+      } catch { continue; }
+      for (const m of sm) {
+        if (shown >= 5) break outer;
+        const rosters = m.rosters && typeof m.rosters === 'object' ? m.rosters : {};
+        const memberCounts = Object.values(rosters).map(r =>
+          r && r.members && typeof r.members === 'object' ? Object.keys(r.members).length : 0
+        );
+        const games = Array.isArray(m.games) ? m.games : [];
+        const withPlayerStats = games.filter(g => {
+          const ts = (g && g.teamStats) || {};
+          return Object.values(ts).some(
+            s => s && (Object.keys(s.playerScores || {}).length || Object.keys(s.playerStats || {}).length)
+          );
+        }).length;
+        console.log(
+          `  state=${String(m.state).padEnd(10)} teamIds=${(m.teamIds || []).length} groupIds=${(m.groupIds || []).length} ` +
+            `rosters=${Object.keys(rosters).length} memberCounts=[${memberCounts}] games=${games.length} gamesWithPlayerStats=${withPlayerStats} ` +
+            `seasonId=${m.seasonId ? 'yes' : 'MISSING'} date=${m.date ? new Date(m.date * 1000).toISOString().slice(0, 10) : 'none'}`
+        );
+        shown++;
+      }
+    }
+  }
+  if (!shown) console.log('  no matches found via the stage path either');
+
+  console.log('\nDone. Section 5 vs 3 tells us whether the date-window walk is losing matches.');
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
@@ -436,6 +607,11 @@ async function main() {
 
   if (args.probe) {
     await probe();
+    return;
+  }
+
+  if (args.audit) {
+    await audit(args);
     return;
   }
 
