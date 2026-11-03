@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Trophy } from "lucide-react";
+import { Menu, X, Trophy, ChevronDown } from "lucide-react";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
+  // Mobile accordion: only one category expanded at a time, all collapsed by default.
+  const [mobileOpenGroup, setMobileOpenGroup] = useState(null);
   const location = useLocation();
 
   const groups = [
@@ -136,7 +138,10 @@ export const Header = () => {
 
           {/* Mobile menu button */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => {
+              setMobileMenuOpen(!mobileMenuOpen);
+              setMobileOpenGroup(null);
+            }}
             className="lg:hidden text-white p-2"
             aria-label="Toggle menu"
             aria-expanded={mobileMenuOpen}
@@ -153,8 +158,8 @@ export const Header = () => {
 
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
-        <div id="mobile-menu" className="lg:hidden bg-slate-800 border-t border-purple-500/30">
-          <div className="px-4 py-4 space-y-4">
+        <div id="mobile-menu" className="lg:hidden bg-slate-800 border-t border-purple-500/30 max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain">
+          <div className="px-4 py-4 space-y-1">
             <Link
               to="/"
               onClick={() => setMobileMenuOpen(false)}
@@ -163,25 +168,45 @@ export const Header = () => {
               Home
             </Link>
 
-            {groups.map((group) => (
-              <div key={group.title}>
-                <div className="text-sm text-gray-400 px-2 mb-2 font-semibold">
-                  {group.title}
+            {groups.map((group) => {
+              const expanded = mobileOpenGroup === group.title;
+              const panelId = `mobile-group-${group.title}`;
+              return (
+                <div key={group.title}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMobileOpenGroup(expanded ? null : group.title)
+                    }
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-300 hover:bg-slate-700 transition-all"
+                    aria-expanded={expanded}
+                    aria-controls={panelId}
+                  >
+                    <span className="font-semibold">{group.title}</span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${expanded ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {expanded && (
+                    <div id={panelId} className="mt-1 ml-3 space-y-1 border-l border-purple-500/30 pl-2">
+                      {group.items.map((item) => (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          onClick={() => {
+                            setMobileMenuOpen(false);
+                            setMobileOpenGroup(null);
+                          }}
+                          className={`block px-3 py-2 rounded-lg transition-all ${isActive(item.path) ? "bg-purple-600 text-white" : "text-gray-300 hover:bg-slate-700"}`}
+                        >
+                          {item.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-1">
-                  {group.items.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`block px-3 py-2 rounded-lg transition-all ${isActive(item.path) ? "bg-purple-600 text-white" : "text-gray-300 hover:bg-slate-700"}`}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
